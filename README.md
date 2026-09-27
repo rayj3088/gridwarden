@@ -79,8 +79,6 @@ The script is in numbered sections. The ones you'll touch:
       ROADMAP.md
       LICENSE                    Apache 2.0
       .gitignore
-      .github/
-        FUNDING.yml
       config/
         sources.yaml             one switch per source; the app exports this
       docs/
@@ -88,7 +86,6 @@ The script is in numbered sections. The ones you'll touch:
         DATA_SOURCES.md          what is in the snapshot, what to connect next
         DATA_MODEL.md            the JSON contract between engine and app
         RISK_MODEL.md            how the risk scores work
-        PRICING.md               free app, Tracker and Enterprise API plans
       engine/
         gridzilla_engine.py      ingestion engine, standard library only
         requirements.txt
@@ -108,13 +105,7 @@ The script is in numbered sections. The ones you'll touch:
 To publish the free map: push this folder to GitHub and turn on Pages. The app
 is one file, so Pages serves it as-is.
 
-## Pricing
+## License
 
-The app is free under Apache 2.0. Two paid plans: Tracker ($15 a month or
-$120 a year) for following the watchlist, and the Enterprise API ($10,000 per
-year, founding-customer price) for scenario scoring, batch site ranking and full
-watchlist data. It is a planning tool built on public data and a static 2025
-study, not engineering or legal advice. No priority data refresh or support tier
-is included yet. See `docs/PRICING.md` and `terms.html`.
-
-Support development: https://paypal.me/rayj3088
+Free and open source under Apache 2.0. It is a planning tool built on public
+data and a static 2025 study, not engineering or legal advice.
