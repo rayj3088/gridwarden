@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;900&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <style>
 /* ===== Theme tokens: light default, dark by system or data-theme ===== */
 :root{
@@ -75,6 +76,17 @@ details.limits summary{cursor:pointer;font-weight:600}
 details.limits ul{margin:8px 0 0;padding-left:18px;font-size:13px}
 details.limits li{margin:4px 0}
 .fresh{font-size:12px;color:var(--muted);margin:8px 0 0}
+#lmap{display:none;width:100%;aspect-ratio:975/610;max-width:100%;background:#0B1622}
+.sat #lmap{display:block}
+.sat #map{display:none}
+.mapwrap .maptools,.mapwrap .info,.mapwrap .mode{z-index:1000}
+.sat .mode{color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.8)}
+.leaflet-container{font:inherit}
+.leaflet-control-attribution{font-size:10px}
+.impact{margin:6px 0 8px;padding:8px 10px;border-left:3px solid var(--amber);background:var(--surface-2);border-radius:0 6px 6px 0}
+.impact p{margin:0 0 4px}
+details.imptab{margin-top:12px;border-top:1px solid var(--rule);padding-top:10px}
+details.imptab summary{cursor:pointer;font-weight:600}
 
 /* ===== Map marks ===== */
 .state{stroke:var(--surface);stroke-width:.8;cursor:pointer}
@@ -166,8 +178,13 @@ dialog textarea{width:100%;height:50vh;font:12px/1.45 ui-monospace,Menlo,Consola
   <section class="mapwrap card" aria-label="Map">
     <span class="mode" id="mapMode"></span>
     <div class="maptools">
+      <select id="baseMap" aria-label="Map style">
+        <option value="std">Map: standard</option>
+        <option value="sat">Map: satellite</option>
+      </select>
       <select id="colorBy" aria-label="Color states by">
         <option value="supply">Color: supply headroom</option>
+        <option value="impact">Color: campus impact</option>
         <option value="risk">Color: risk</option>
         <option value="none">Color: none</option>
       </select>
@@ -176,6 +193,7 @@ dialog textarea{width:100%;height:50vh;font:12px/1.45 ui-monospace,Menlo,Consola
       <button type="button" id="zoomReset">Reset</button>
     </div>
     <svg id="map" viewBox="0 0 975 610" role="img" aria-label="United States map of grid headroom, data center markets and sites"></svg>
+    <div id="lmap" aria-label="Satellite map"></div>
     <div class="info" id="info" role="dialog" aria-live="polite"><button class="x" id="infoClose" aria-label="Close">&times;</button><div id="infoBody"></div></div>
     <div class="legend" id="legend"></div>
     <p class="maphint" id="mapHint">Tap a state for a plain-language summary. Tap a dot for a data center market.</p>
@@ -229,8 +247,8 @@ dialog textarea{width:100%;height:50vh;font:12px/1.45 ui-monospace,Menlo,Consola
       <div class="row"><div class="t"><b>My sites</b><small>From the Sites tab</small></div><label class="switch"><input type="checkbox" data-layer="sites" aria-label="My sites"><span></span></label></div>
       <h2>Supply</h2>
       <div class="row"><div class="t"><b>Flexible headroom by grid region</b><small>Duke Nicholas Institute, 2025</small></div><label class="switch"><input type="checkbox" data-layer="supply" aria-label="Headroom"><span></span></label></div>
-      <div class="row"><div class="t"><b>Transmission lines, 345 kV and up</b><small>Live source; switch it on in Sources</small></div><label class="switch"><input type="checkbox" data-layer="lines" aria-label="Transmission lines"><span></span></label></div>
-      <div class="row"><div class="t"><b>Substations</b><small>Live source; switch it on in Sources</small></div><label class="switch"><input type="checkbox" data-layer="subs" aria-label="Substations"><span></span></label></div>
+      <h2>Impact</h2>
+      <div class="row"><div class="t"><b>Campus impact by state</b><small>Power, carbon, water and cost of one campus. EIA 2024, EPA eGRID2023, Berkeley Lab 2024</small></div><label class="switch"><input type="checkbox" data-layer="impact" aria-label="Campus impact"><span></span></label></div>
       <h2>Risk</h2>
       <p class="hint">Water stress, zoning friction and incentives, scored 0 (easy) to 5 (hard) per state. Import your own scores, or load demo values to see the layer work.</p>
       <div class="btns">
@@ -280,6 +298,10 @@ dialog textarea{width:100%;height:50vh;font:12px/1.45 ui-monospace,Menlo,Consola
     <div class="tablewrap"><table id="regionTable"></table></div>
     <p class="note" id="regionNote"></p>
     <div class="btns"><button class="btn" type="button" id="csvBtn">Download table (CSV)</button></div>
+    <details class="imptab" id="impTab">
+      <summary>Impact of one campus, by state</summary>
+      <div class="tablewrap"><table id="impactTable"></table></div>
+    </details>
     <details class="limits" id="limits" open>
       <summary>What this can't tell you</summary>
       <ul>
@@ -289,7 +311,8 @@ dialog textarea{width:100%;height:50vh;font:12px/1.45 ui-monospace,Menlo,Consola
         <li>The efficiency setting is a what-if. The 80% preset is a design target, not a measured result.</li>
         <li>Flexible service is not verified here. Utilities decide what they will count.</li>
         <li>Tracked construction only covers markets with published figures, so real queues are longer.</li>
-        <li>Water, land, noise, jobs and local costs are not part of the headroom numbers. Risk scores appear only if you load them, and demo values are random.</li>
+        <li>Impact figures assume the campus runs at full size all year, so they are an upper bound. Cost uses the state's average retail price; very large customers usually pay less. Water uses US averages, not local cooling designs.</li>
+        <li>Land, noise, jobs and local taxes are not part of these numbers. Risk scores appear only if you load them, and demo values are random.</li>
       </ul>
       <p class="fresh" id="fresh"></p>
     </details>
@@ -309,6 +332,7 @@ dialog textarea{width:100%;height:50vh;font:12px/1.45 ui-monospace,Menlo,Consola
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/datamaps@0.5.9/dist/datamaps.usa.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
 (function () {
 'use strict';
@@ -354,6 +378,10 @@ const MARKETS = [
   { id: 'hil', name: 'Hillsboro', st: 'OR', region: 'OTHER', lon: -122.99, lat: 45.52, inv: null, uc: null, vac: null, asOf: 'CBRE primary market', note: 'Sizes not in this snapshot' },
   { id: 'nyc', name: 'New York Tri-State', st: 'NJ', region: 'OTHER', lon: -74.17, lat: 40.74, inv: null, uc: null, vac: null, asOf: 'CBRE primary market', note: 'Sizes not in this snapshot' }
 ];
+// State electricity: [retail sales GWh (EIA 2024), average retail price cents/kWh (EIA 2024), CO2 lb/MWh (EPA eGRID2023)].
+const IMPACT = {AL:[87522,11.90,711.0],AK:[6046,22.17,809.8],AZ:[90843,12.74,686.7],AR:[49895,9.59,993.4],CA:[245717,27.04,393.5],CO:[56842,12.07,1085.0],CT:[27351,24.37,538.3],DE:[11373,13.56,703.2],DC:[10142,16.88,394.1],FL:[255095,12.53,786.6],GA:[150003,11.40,713.8],HI:[8952,38.00,1385.1],ID:[26369,9.51,313.3],IL:[133226,12.21,471.7],IN:[99219,11.38,1457.2],IA:[54930,9.34,630.2],KS:[41258,11.21,728.2],KY:[74405,10.07,1735.0],LA:[95356,8.80,761.4],ME:[11341,19.66,311.8],MD:[59018,15.04,520.0],MA:[49418,23.94,822.4],MI:[98991,14.16,793.2],MN:[64562,12.35,747.5],MS:[48684,10.93,826.3],MO:[77776,11.06,1444.1],MT:[15567,10.83,1056.2],NE:[35191,9.07,1018.2],NV:[40664,11.47,642.4],NH:[10913,20.61,272.9],NJ:[73531,16.29,468.3],NM:[30296,9.18,770.2],NY:[140497,19.66,465.1],NC:[136904,11.65,624.0],ND:[29769,7.93,1288.4],OH:[153707,11.29,1063.8],OK:[72083,9.09,647.2],OR:[59680,11.11,364.2],PA:[142146,12.51,645.8],RI:[7414,24.15,839.1],SC:[83961,10.90,557.2],SD:[13637,10.87,334.0],TN:[102962,10.90,657.3],TX:[505431,9.79,768.3],UT:[34688,9.97,1413.0],VT:[5458,18.41,43.0],VA:[138044,10.62,536.9],WA:[89981,10.13,265.1],WV:[32990,11.05,1954.4],WI:[68291,12.72,1157.0],WY:[17216,9.14,1820.3]};
+// Berkeley Lab (2024 report, 2023 data): 17 billion gallons direct (cooling) and 211 billion indirect (power plants) over 176 TWh.
+const WATER_DIRECT = 17e9 / 176e9, WATER_INDIRECT = 211e9 / 176e9; // gallons per kWh
 const PRIMARY_TOTALS = 'Across the eight primary markets in H1 2026: about 10.9 GW of capacity, 7,481 MW under construction, 1.4% vacancy (CBRE).';
 const SAMPLE_SITES = 'name,lat,lon,mw,state\nSample site: Abilene TX,32.45,-99.73,1200,TX\nSample site: Richland Parish LA,32.42,-91.76,2000,LA\nSample site: Memphis TN,35.15,-90.05,300,TN\nSample site: Mount Pleasant WI,42.72,-87.88,900,WI\nSample site: New Carlisle IN,41.70,-86.51,600,IN\nSample site: Rome NY,43.21,-75.46,150,NY';
 
@@ -365,13 +393,12 @@ const SAMPLE_SITES = 'name,lat,lon,mw,state\nSample site: Abilene TX,32.45,-99.7
    To add a source: add an entry. For a browser source, add a loader in
    LOADERS (section 5).
    ===================================================================== */
-const HIFLD_LINES = 'https://services2.arcgis.com/LYMgRMwHfrWWEg3s/arcgis/rest/services/HIFLD_US_Electric_Power_Transmission_Lines/FeatureServer/0/query';
-const HIFLD_SUBS = 'https://services5.arcgis.com/HDRa0B57OVrv2E1q/arcgis/rest/services/Electric_Substations/FeatureServer/0/query';
 const SOURCES = [
   { id: 'duke_headroom', org: 'Duke Nicholas Institute', dataset: 'Flexible headroom by grid region', layer: 'Supply', mode: 'snapshot', asOf: 'Feb 2025', on: true, url: 'https://www.utilitydive.com/news/us-grid-headroom-flexible-load-data-center-ai-ev-duke-report/739767/' },
   { id: 'cbre_markets', org: 'CBRE Research', dataset: 'Data center markets: inventory and construction', layer: 'Demand', mode: 'snapshot', asOf: 'H1 2026 (Q1 2026 or H2 2025 for some markets)', on: true, url: 'https://www.cbre.com/insights/books/north-america-data-center-trends-h1-2026' },
-  { id: 'hifld_lines', org: 'HIFLD via ArcGIS', dataset: 'Transmission lines, 345 kV and up', layer: 'Supply', mode: 'browser', on: false, url: HIFLD_LINES },
-  { id: 'hifld_subs', org: 'HIFLD via ArcGIS', dataset: 'Electric substations', layer: 'Supply', mode: 'browser', on: false, url: HIFLD_SUBS },
+  { id: 'eia_state', org: 'U.S. Energy Information Administration', dataset: 'State electricity sales and prices', layer: 'Impact', mode: 'snapshot', asOf: '2024', on: true, url: 'https://www.eia.gov/electricity/state/' },
+  { id: 'epa_egrid', org: 'EPA eGRID', dataset: 'State CO2 emission rates', layer: 'Impact', mode: 'snapshot', asOf: '2023 data (eGRID2023)', on: true, url: 'https://www.epa.gov/egrid/summary-data' },
+  { id: 'lbnl_water', org: 'Lawrence Berkeley National Laboratory', dataset: 'Data center water use, US average', layer: 'Impact', mode: 'snapshot', asOf: '2023 data (2024 report)', on: true, url: 'https://eta-publications.lbl.gov/sites/default/files/2024-12/lbnl-2024-united-states-data-center-energy-usage-report_1.pdf' },
   { id: 'gridstatus', org: 'GridStatus.io', dataset: 'Real-time ISO load, frequency, nodal prices', layer: 'Supply', mode: 'engine', key: true, url: 'https://www.gridstatus.io' },
   { id: 'lbnl_queued_up', org: 'Lawrence Berkeley National Laboratory', dataset: 'Queued Up: interconnection queues', layer: 'Supply', mode: 'engine', url: 'https://emp.lbl.gov/queues' },
   { id: 'eia_open_data', org: 'U.S. Energy Information Administration', dataset: 'Open Data API', layer: 'Supply', mode: 'engine', key: true, url: 'https://api.eia.gov/v2/' },
@@ -399,9 +426,9 @@ const SOURCES = [
    4. APP STATE: saved in this browser only.
    ===================================================================== */
 const DEFAULTS = {
-  sim: { mw: 500, eff: 80, flex: 'p05', subPipe: true },
-  layers: { markets: true, sites: true, supply: true, lines: true, subs: true },
-  colorBy: 'supply', tab: 'simulate', theme: null,
+  sim: { mw: 500, eff: 0, flex: 'p05', subPipe: true },
+  layers: { markets: true, sites: true, supply: true, impact: true },
+  colorBy: 'supply', base: 'std', tab: 'simulate', theme: null, v: 2,
   src: {}, keys: {}, risk: {}, riskDemo: false, sites: [], extraMarkets: [], regionOverrides: {}
 };
 const clone = o => JSON.parse(JSON.stringify(o));
@@ -413,11 +440,12 @@ function loadState() {
     if (s[k] && typeof s[k] === 'object' && !Array.isArray(s[k]) && saved[k] && typeof saved[k] === 'object') Object.assign(s[k], saved[k]);
     else s[k] = saved[k];
   }
+  if (saved.v !== 2) { s.sim.eff = 0; s.v = 2; delete s.layers.lines; delete s.layers.subs; if (s.layers.impact == null) s.layers.impact = true; }
   return s;
 }
 let S = loadState();
 function save() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(S)); } catch (e) { /* storage can be unavailable */ } writeHash(); }
-const RT = { lines: null, subs: null, status: {}, geo: null, view: { k: 1, x: 0, y: 0 } };
+const RT = { status: {}, geo: null, view: { k: 1, x: 0, y: 0 } };
 
 /* =====================================================================
    5. ENGINE: the scenario math, and the loaders for live sources.
@@ -448,6 +476,11 @@ function scenario() {
   return { mw, eff, need, freed, flex, scale, haveSupply, rows,
     total: { head: scale == null || !haveSupply ? null : sum('head'), pipe: sum('pipe'), rem: scale == null || !haveSupply ? null : sum('rem'), std: sum('std'), yours: sum('yours') } };
 }
+function impactOf(st, mw) {
+  const d = IMPACT[st]; if (!d || !(mw > 0)) return null;
+  const mwh = mw * 8760, kwh = mwh * 1000;
+  return { mwh, share: mwh / (d[0] * 1000), co2t: mwh * d[2] / 2204.62, cost: kwh * d[1] / 100, price: d[1], wDirect: kwh * WATER_DIRECT, wIndirect: kwh * WATER_INDIRECT };
+}
 function stateRegion(st) { return STATES[st] ? STATES[st][1] : null; }
 function riskScore(st) {
   const r = S.risk[st];
@@ -470,42 +503,14 @@ function rankSites() {
     return Object.assign({}, s, { st, reg, rem, need, risk, fitStd, fitYours, score });
   }).sort((a, b) => b.score - a.score);
 }
-// Browser loaders. Each returns GeoJSON or throws.
-async function arcgisQuery(url, where, extra) {
-  const params = new URLSearchParams(Object.assign({ where, outFields: '*', returnGeometry: 'true', outSR: '4326', f: 'geojson', resultRecordCount: '2000' }, extra || {}));
-  const ctl = new AbortController();
-  const timer = setTimeout(() => ctl.abort(), 20000);
-  try {
-    const res = await fetch(url + '?' + params.toString(), { signal: ctl.signal });
-    if (!res.ok) throw new Error('The service answered ' + res.status);
-    const j = await res.json();
-    if (j.error) throw new Error(j.error.message || 'The service returned an error');
-    if (!Array.isArray(j.features)) throw new Error('The service returned no features');
-    return j;
-  } finally { clearTimeout(timer); }
-}
-const LOADERS = {
-  hifld_lines: async () => {
-    try { return await arcgisQuery(HIFLD_LINES, 'VOLTAGE>=345', { maxAllowableOffset: '0.02' }); }
-    catch (e) { if (e instanceof TypeError || e.name === 'AbortError') throw e; return arcgisQuery(HIFLD_LINES, '1=1', { maxAllowableOffset: '0.02' }); }
-  },
-  hifld_subs: async () => {
-    try { return await arcgisQuery(HIFLD_SUBS, 'MAX_VOLT>=345'); }
-    catch (e) { if (e instanceof TypeError || e.name === 'AbortError') throw e; return arcgisQuery(HIFLD_SUBS, '1=1'); }
-  }
-};
+// Browser loaders (live sources fetched in this page). None at present;
+// add one here and give its source mode 'browser'.
+const LOADERS = {};
 async function runLoader(id) {
   if (!LOADERS[id]) return;
-  RT.status[id] = { kind: 'loading', text: 'Loading' };
-  renderSources();
-  try {
-    const data = await LOADERS[id]();
-    if (id === 'hifld_lines') RT.lines = data; else RT.subs = data;
-    RT.status[id] = { kind: 'live', text: 'Live: ' + data.features.length.toLocaleString() + ' features' + (RT.geo ? '' : '. They draw on the geographic map, which did not load here') };
-  } catch (e) {
-    const blocked = e instanceof TypeError;
-    RT.status[id] = { kind: 'err', text: blocked ? 'Blocked here. Live sources load when you open index.html on your computer or your own website.' : (e.name === 'AbortError' ? 'Timed out after 20 seconds. Try again later.' : e.message) };
-  }
+  RT.status[id] = { kind: 'loading', text: 'Loading' }; renderSources();
+  try { await LOADERS[id](); RT.status[id] = { kind: 'live', text: 'Live' }; }
+  catch (e) { RT.status[id] = { kind: 'err', text: e instanceof TypeError ? 'Blocked here. Live sources load when you open index.html on your computer or your own website.' : e.message }; }
   renderSources(); renderMap(); renderLegend();
 }
 
@@ -558,6 +563,10 @@ function stateStyle(st) {
     const r = riskScore(st);
     return r == null ? { fill: 'var(--queue)', fillOpacity: 1 } : { fill: 'var(--red)', fillOpacity: 0.15 + 0.17 * r };
   }
+  if (mode === 'impact') {
+    const im = impactOf(st, S.sim.mw);
+    return im == null ? { fill: 'var(--queue)', fillOpacity: 1 } : { fill: 'var(--amber)', fillOpacity: 0.12 + 0.83 * Math.min(1, Math.sqrt(im.share / 0.5)) };
+  }
   if (mode === 'supply' && S.layers.supply) {
     const row = scenario().rows.find(x => x.r.id === stateRegion(st));
     if (!row || row.rem == null) return { fill: 'var(--queue)', fillOpacity: 1 };
@@ -578,11 +587,6 @@ function renderMap() {
       const p = el('path', { d: RT.geo.path(f), class: 'state', tabindex: 0, 'aria-label': STATES[f.id][0] }, g, stateStyle(f.id));
       p.addEventListener('click', () => showState(f.id));
       p.addEventListener('keydown', e => { if (e.key === 'Enter') showState(f.id); });
-    });
-    if (S.layers.lines && RT.lines && srcOn('hifld_lines')) el('path', { d: RT.geo.path(RT.lines), class: 'tline' }, g);
-    if (S.layers.subs && RT.subs && srcOn('hifld_subs')) RT.subs.features.forEach(f => {
-      if (!f.geometry || f.geometry.type !== 'Point') return;
-      const p = RT.geo.projection(f.geometry.coordinates); if (p) el('circle', { cx: p[0], cy: p[1], r: 1.6, class: 'sub' }, g);
     });
     if (S.layers.supply && S.colorBy === 'supply' && srcOn('duke_headroom')) REGIONS.filter(r => r.center).forEach(r => {
       const p = RT.geo.projection(r.center); if (!p) return;
@@ -618,6 +622,7 @@ function renderMap() {
       poly.addEventListener('click', e => { e.stopPropagation(); showSite(s); });
     });
   }
+  renderSat();
 }
 function renderLegend() {
   const L = [];
@@ -626,15 +631,48 @@ function renderLegend() {
     if (!srcOn('duke_headroom')) L.push('<span>Supply source is switched off</span>');
     else if (FLEX[S.sim.flex].scale == null) L.push(sw('var(--queue)', 1, 'Firm service: waits in the interconnection queue'));
     else L.push(sw('var(--green)', .3, 'Less headroom'), sw('var(--green)', .8, 'More headroom (per region)'));
+  } else if (S.colorBy === 'impact') {
+    L.push(sw('var(--amber)', .2, 'One campus: about 1% of state power'), sw('var(--amber)', .95, 'Half or more of state power'));
   } else if (S.colorBy === 'risk') {
     L.push(sw('var(--red)', .2, 'Low risk'), sw('var(--red)', .95, 'High risk'), sw('var(--queue)', 1, 'No score'));
     if (S.riskDemo) L.push('<span><b>Demo values, not real data</b></span>');
   }
   if (S.layers.markets && allMarkets().length) L.push(sw('var(--red)', .8, 'Data center market (dashed ring: under construction)'));
   if (S.layers.sites && (S.sites || []).length) L.push(sw('var(--ink)', 1, 'Your site'));
-  if (RT.geo && S.layers.lines && RT.lines && srcOn('hifld_lines')) L.push(sw('var(--cyan)', 1, 'Transmission, 345 kV+'));
-  if (RT.geo && S.layers.subs && RT.subs && srcOn('hifld_subs')) L.push(sw('var(--amber)', 1, 'Substation'));
   document.getElementById('legend').innerHTML = L.join('');
+}
+// Satellite view: public-domain USGS imagery, with the same state colors and marks on top.
+// The state tint fades as you zoom in so the imagery shows through.
+function cssColor(v) { const m = /var\((--[\w-]+)\)/.exec(v || ''); return m ? getComputedStyle(document.documentElement).getPropertyValue(m[1]).trim() : v; }
+function renderSat() {
+  const on = S.base === 'sat' && !!window.L;
+  document.querySelector('.mapwrap').classList.toggle('sat', on);
+  if (!on) return;
+  const Lf = window.L;
+  if (!RT.lmap) {
+    RT.lmap = Lf.map('lmap', { zoomControl: false, minZoom: 3, maxZoom: 19, zoomSnap: 0.5 }).setView([38.6, -96.5], 4);
+    Lf.tileLayer('https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/{z}/{y}/{x}',
+      { maxNativeZoom: 16, maxZoom: 19, attribution: 'Imagery: USDA, USGS The National Map' }).addTo(RT.lmap);
+    RT.lover = Lf.layerGroup().addTo(RT.lmap);
+    RT.lmap.on('zoomend', renderSat);
+  }
+  setTimeout(() => RT.lmap.invalidateSize(), 0);
+  $('mapMode').textContent = 'Satellite (USGS imagery)';
+  RT.lover.clearLayers();
+  const fade = Math.max(0, 1 - Math.max(0, RT.lmap.getZoom() - 6) / 4);
+  if (RT.geo) Lf.geoJSON({ type: 'FeatureCollection', features: RT.geo.feats }, {
+    style: f => { const st = stateStyle(f.id), tint = S.colorBy !== 'none' && st.fill !== 'var(--queue)';
+      return { color: '#FFFFFF', weight: 0.8, opacity: 0.55, fillColor: cssColor(st.fill), fillOpacity: tint ? st.fillOpacity * 0.6 * fade : 0 }; },
+    onEachFeature: (f, l) => l.on('click', () => showState(f.id))
+  }).addTo(RT.lover);
+  if (S.layers.markets) allMarkets().forEach(m => {
+    const r = m.inv ? Math.max(5, Math.sqrt(m.inv) / 5) : 5;
+    if (m.uc) Lf.circleMarker([m.lat, m.lon], { radius: r + 5, color: cssColor('var(--red)'), weight: 1.5, dashArray: '3 3', fill: false, interactive: false }).addTo(RT.lover);
+    Lf.circleMarker([m.lat, m.lon], { radius: r, color: '#FFFFFF', weight: 1.5, fillColor: cssColor('var(--red)'), fillOpacity: 0.9 }).on('click', () => showMarket(m)).addTo(RT.lover);
+  });
+  if (S.layers.sites) rankSites().forEach(s => {
+    Lf.circleMarker([s.lat, s.lon], { radius: 5, color: '#FFFFFF', weight: 2, fillColor: '#0F1B26', fillOpacity: 1 }).on('click', () => showSite(s)).addTo(RT.lover);
+  });
 }
 // Zoom and pan (mouse and pen; touch uses the buttons so the page still scrolls).
 function setView(k, x, y) {
@@ -661,6 +699,17 @@ const fmtGW = v => v == null ? 'n/a' : v.toFixed(1) + ' GW';
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 function showInfo(html, st) { RT.sel = st || null; writeHash(); document.getElementById('infoBody').innerHTML = html; document.getElementById('info').classList.add('show'); }
 document.getElementById('infoClose').addEventListener('click', () => { document.getElementById('info').classList.remove('show'); RT.sel = null; writeHash(); });
+const fmtNum = v => v >= 1e9 ? (v / 1e9).toFixed(1) + ' billion' : v >= 1e6 ? (v / 1e6).toFixed(1) + ' million' : Math.round(v).toLocaleString();
+const fmtUSD = v => '$' + fmtNum(v);
+const fmtPct = v => v < 0.001 ? 'under 0.1%' : (v * 100).toFixed(v < 0.1 ? 1 : 0) + '%';
+function impactText(st, name) {
+  const sc = scenario(), a = impactOf(st, sc.mw); if (!a) return '';
+  let t = `<div class="impact"><p><b>Impact of one ${fmtMW(sc.mw)} campus</b> running all year: about <b>${fmtPct(a.share)}</b> of ${esc(name)}'s electricity sales, ` +
+    `<b>${fmtNum(a.co2t)}</b> metric tons of CO₂ a year at the state's grid mix, and about <b>${fmtUSD(a.cost)}</b> a year in power at the average price of ${a.price.toFixed(1)}¢/kWh.</p>` +
+    `<p>Cooling water: roughly <b>${fmtNum(a.wDirect)}</b> gallons a year on site, plus about ${fmtNum(a.wIndirect)} at power plants (US averages).</p>`;
+  if (sc.eff > 0) { const b = impactOf(st, sc.need); t += `<p>At ${sc.eff}% efficiency: ${fmtPct(b.share)} of state power, ${fmtNum(b.co2t)} tons of CO₂, ${fmtNum(b.wDirect)} gallons on site.</p>`; }
+  return t + '</div>';
+}
 function plainState(st) {
   const name = STATES[st][0], reg = regionById(stateRegion(st)), sc = scenario();
   const row = sc.rows.find(x => x.r.id === (reg && reg.id));
@@ -669,13 +718,13 @@ function plainState(st) {
   if (!sc.haveSupply) parts.push('The supply source is switched off, so there is no headroom estimate.');
   else if (f.scale == null) parts.push(`On firm service, a new large campus in ${name} would likely wait in the interconnection line. Some utilities report waits of 7 to 10 years. Choose a flexible option to see what opens up.`);
   else if (row && row.rem != null && reg.id === 'OTHER') parts.push(`${name} sits in one of 17 smaller grid regions that are combined here. Together they have about <b>${row.rem.toFixed(1)} GW</b> of spare capacity if big customers agree to ${esc(f.long)}, so that number says little about ${name} on its own.`);
-  else if (row && row.rem != null) parts.push(`${name} is mostly served by <b>${esc(reg.name.replace(/\.$/, ''))}</b>. That region has about <b>${row.rem.toFixed(1)} GW</b> of spare capacity if big customers agree to ${esc(f.long)}. That is roughly enough for <b>${row.std}</b> standard ${fmtMW(sc.mw)} campuses across the whole region, or <b>${row.yours}</b> if each used ${sc.eff}% less grid power.`);
+  else if (row && row.rem != null) parts.push(`${name} is mostly served by <b>${esc(reg.name.replace(/\.$/, ''))}</b>. That region has about <b>${row.rem.toFixed(1)} GW</b> of spare capacity if big customers agree to ${esc(f.long)}. That is roughly enough for <b>${row.std}</b> campuses of ${fmtMW(sc.mw)} across the whole region${sc.eff > 0 ? `, or <b>${row.yours}</b> if each used ${sc.eff}% less grid power` : ''}.`);
   const ms = allMarkets().filter(m => m.st === st);
   if (ms.length) { const uc = ms.reduce((a, m) => a + (m.uc || 0), 0); parts.push(`Tracked data center markets here: ${ms.map(m => esc(m.name)).join(', ')}${uc ? `, with about ${fmtMW(uc)} under construction (CBRE)` : ''}.`); }
   const r = riskScore(st);
   if (r != null) parts.push(`Your risk score for ${name} is ${r.toFixed(1)} out of 5 (0 is easy, 5 is hard)${S.riskDemo ? ', but these are demo values, not real data' : ''}.`);
   parts.push('This is a regional estimate, not a study of any one location. Only the local utility can say whether a specific project can connect.');
-  return '<div class="plain">' + parts.map(p => `<p>${p}</p>`).join('') + '</div>';
+  return '<div class="plain">' + parts.map(p => `<p>${p}</p>`).join('') + '</div>' + (S.layers.impact ? impactText(st, name) : '');
 }
 function showState(st) {
   const reg = regionById(stateRegion(st)); const row = scenario().rows.find(x => x.r.id === (reg && reg.id));
@@ -710,8 +759,13 @@ function renderHeadline() {
     $('subline').textContent = 'The headroom study does not estimate firm capacity. Some utilities report interconnection waits of 7 to 10 years. Pick a flexible option to see what opens up.';
     return;
   }
-  $('headline').innerHTML = `With ${esc(f.long)}, the grid can take <b>${sc.total.std.toLocaleString()}</b> standard ${fmtMW(sc.mw)} campuses, or <b>${sc.total.yours.toLocaleString()}</b> built your way.`;
-  $('subline').textContent = `Your way means ${sc.eff}% less grid power per campus. Each one frees ${fmtMW(sc.freed)} of capacity, about ${sc.total.head.toFixed(0)} GW of headroom nationwide${S.sim.subPipe ? ', minus tracked construction' : ''}.`;
+  if (sc.eff > 0) {
+    $('headline').innerHTML = `With ${esc(f.long)}, the grid can take <b>${sc.total.std.toLocaleString()}</b> standard ${fmtMW(sc.mw)} campuses, or <b>${sc.total.yours.toLocaleString()}</b> built your way.`;
+    $('subline').textContent = `Your way means ${sc.eff}% less grid power per campus. Each one frees ${fmtMW(sc.freed)} of capacity, about ${sc.total.head.toFixed(0)} GW of headroom nationwide${S.sim.subPipe ? ', minus tracked construction' : ''}.`;
+  } else {
+    $('headline').innerHTML = `With ${esc(f.long)}, the grid can take about <b>${sc.total.std.toLocaleString()}</b> new ${fmtMW(sc.mw)} campuses.`;
+    $('subline').textContent = `That uses about ${sc.total.head.toFixed(0)} GW of headroom nationwide${S.sim.subPipe ? ', minus tracked construction' : ''}. Try the efficiency slider to see how more efficient hardware changes the answer.`;
+  }
 }
 function renderSim() {
   const sc = scenario();
@@ -729,13 +783,22 @@ function renderRegions() {
   const queueCell = id => { const v = hasQueue ? S.queueCapacity[id] : null; return v == null ? '<td>&ndash;</td>' : `<td>${fmtGW(v)}</td>`; };
   let h = '<thead><tr><th>Region</th><th>Headroom</th><th>Tracked construction</th><th>Left</th>' +
     (hasQueue ? '<th>New supply in queue</th>' : '') +
-    '<th>Standard campuses</th><th>Your campuses</th></tr></thead><tbody>';
-  sc.rows.forEach(x => { h += `<tr><td>${esc(x.r.name)}</td>${cell(x.head, fmtGW)}<td>${x.pipe ? fmtGW(x.pipe) : '&ndash;'}</td>${cell(x.rem, fmtGW)}${hasQueue ? queueCell(x.r.id) : ''}${cell(x.std, n)}${cell(x.yours, n)}</tr>`; });
+    (sc.eff > 0 ? '<th>Standard campuses</th><th>Your campuses</th>' : '<th>Campuses that fit</th>') + '</tr></thead><tbody>';
+  sc.rows.forEach(x => { h += `<tr><td>${esc(x.r.name)}</td>${cell(x.head, fmtGW)}<td>${x.pipe ? fmtGW(x.pipe) : '&ndash;'}</td>${cell(x.rem, fmtGW)}${hasQueue ? queueCell(x.r.id) : ''}${cell(x.std, n)}${sc.eff > 0 ? cell(x.yours, n) : ''}</tr>`; });
   const totalQueue = hasQueue ? Object.values(S.queueCapacity).reduce((a, v) => a + (v || 0), 0) : null;
-  h += `<tr class="total"><td>United States</td>${cell(sc.total.head, fmtGW)}<td>${fmtGW(sc.total.pipe)}</td>${cell(sc.total.rem, fmtGW)}${hasQueue ? cell(totalQueue, fmtGW) : ''}${sc.total.head == null ? '<td>n/a</td><td>n/a</td>' : `<td>${n(sc.total.std)}</td><td>${n(sc.total.yours)}</td>`}</tr></tbody>`;
+  h += `<tr class="total"><td>United States</td>${cell(sc.total.head, fmtGW)}<td>${fmtGW(sc.total.pipe)}</td>${cell(sc.total.rem, fmtGW)}${hasQueue ? cell(totalQueue, fmtGW) : ''}${sc.total.head == null ? (sc.eff > 0 ? '<td>n/a</td><td>n/a</td>' : '<td>n/a</td>') : `<td>${n(sc.total.std)}</td>${sc.eff > 0 ? `<td>${n(sc.total.yours)}</td>` : ''}`}</tr></tbody>`;
   $('regionTable').innerHTML = h;
+  renderImpact();
   $('regionNote').textContent = PRIMARY_TOTALS + ' Tracked construction only covers markets with published figures, so real queues are longer.' +
     (hasQueue ? ' "New supply in queue" is generation and storage capacity currently proposed and awaiting interconnection (LBNL Queued Up) -- not headroom, and not subtracted from it: new supply waiting in line, not room available today.' : '');
+}
+function renderImpact() {
+  const box = $('impTab'); box.hidden = !S.layers.impact; if (!S.layers.impact) return;
+  const sc = scenario();
+  const rows = Object.keys(IMPACT).map(st => Object.assign({ st }, impactOf(st, sc.mw))).sort((a, b) => b.share - a.share);
+  $('impactTable').innerHTML = `<thead><tr><th>State</th><th>Share of state power</th><th>CO₂ t/yr</th><th>Power cost/yr</th><th>Cooling water gal/yr (US avg)</th></tr></thead><tbody>` +
+    rows.map(r => `<tr><td>${esc(STATES[r.st][0])}</td><td>${fmtPct(r.share)}</td><td>${fmtNum(r.co2t)}</td><td>${fmtUSD(r.cost)}</td><td>${fmtNum(r.wDirect)}</td></tr>`).join('') + '</tbody>';
+  box.querySelector('summary').textContent = `Impact of one ${fmtMW(sc.mw)} campus, by state`;
 }
 function renderLayers() {
   document.querySelectorAll('[data-layer]').forEach(i => { i.checked = !!S.layers[i.dataset.layer]; });
@@ -744,7 +807,7 @@ function renderLayers() {
 }
 function modeLabel(s) { return s.mode === 'snapshot' ? '<span class="badge snap">built in</span>' : s.mode === 'browser' ? '<span class="badge">live</span>' : '<span class="badge">engine</span>'; }
 function renderSources() {
-  const groups = ['Demand', 'Supply', 'Risk', 'Context'];
+  const groups = ['Demand', 'Supply', 'Impact', 'Risk', 'Context'];
   let h = '';
   groups.forEach(g => {
     h += `<h2>${g}</h2>`;
@@ -776,7 +839,7 @@ function selectTab(name) {
   document.querySelectorAll('#tabs button').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === name)));
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('on', t.id === 'tab-' + name));
 }
-function renderAll() { renderSim(); renderHeadline(); renderRegions(); renderLayers(); renderSources(); renderSites(); renderMap(); renderLegend(); renderFresh(); $('colorBy').value = S.colorBy; }
+function renderAll() { renderSim(); renderHeadline(); renderRegions(); renderLayers(); renderSources(); renderSites(); renderMap(); renderLegend(); renderFresh(); $('colorBy').value = S.colorBy; $('baseMap').value = S.base || 'std'; }
 const refresh = () => { save(); renderSim(); renderHeadline(); renderRegions(); renderSites(); renderMap(); renderLegend(); };
 
 /* =====================================================================
@@ -840,7 +903,6 @@ function importText(kind, text) {
     if (Array.isArray(j.markets)) { S.extraMarkets = j.markets.filter(m => m && m.name && m.lat != null && m.lon != null && m.region); got.push(S.extraMarkets.length + ' markets'); }
     if (j.regions && typeof j.regions === 'object') { S.regionOverrides = j.regions; got.push('region headroom'); }
     if (j.risk && typeof j.risk === 'object') { Object.assign(S.risk, j.risk); S.riskDemo = false; got.push(Object.keys(j.risk).length + ' risk scores'); }
-    if (j.lines && Array.isArray(j.lines.features)) { RT.lines = j.lines; S.src.hifld_lines = true; RT.status.hifld_lines = { kind: 'live', text: 'Imported from the engine: ' + j.lines.features.length + ' features' }; got.push('transmission lines'); }
     if (j.pipeline_capacity_gw && typeof j.pipeline_capacity_gw.regions === 'object') {
       S.queueCapacity = j.pipeline_capacity_gw.regions;
       S.src.lbnl_queued_up = true;
@@ -881,10 +943,10 @@ function sourcesYaml() {
    The address bar always describes the current view, so any link you copy
    reopens the same scenario (and the same state card, if one is open).
    ===================================================================== */
-const COLOR_MODES = ['supply', 'risk', 'none'];
+const COLOR_MODES = ['supply', 'impact', 'risk', 'none'];
 function hashParams() {
   const p = new URLSearchParams();
-  p.set('mw', S.sim.mw); p.set('eff', S.sim.eff); p.set('flex', S.sim.flex); p.set('pipe', S.sim.subPipe ? 1 : 0); p.set('color', S.colorBy);
+  p.set('mw', S.sim.mw); p.set('eff', S.sim.eff); p.set('flex', S.sim.flex); p.set('pipe', S.sim.subPipe ? 1 : 0); p.set('color', S.colorBy); p.set('map', S.base === 'sat' ? 'sat' : 'std');
   if (RT.sel) p.set('st', RT.sel);
   return p.toString();
 }
@@ -901,6 +963,7 @@ function readHash() {
     if (p.get('pipe') === '0' || p.get('pipe') === '1') out.pipe = p.get('pipe') === '1';
     if (COLOR_MODES.includes(p.get('color'))) out.color = p.get('color');
     if (STATES[p.get('st')]) out.st = p.get('st');
+    if (p.get('map') === 'sat' || p.get('map') === 'std') out.base = p.get('map');
     return out;
   } catch (e) { return null; }
 }
@@ -981,12 +1044,9 @@ document.querySelectorAll('[data-eff]').forEach(b => b.addEventListener('click',
 $('flexSeg').addEventListener('click', e => { const b = e.target.closest('[data-flex]'); if (b) { S.sim.flex = b.dataset.flex; refresh(); } });
 $('subPipe').addEventListener('change', e => { S.sim.subPipe = e.target.checked; refresh(); });
 $('colorBy').addEventListener('change', e => { S.colorBy = e.target.value; save(); renderMap(); renderLegend(); });
+$('baseMap').addEventListener('change', e => { S.base = e.target.value; save(); renderMap(); if (S.base === 'sat' && !window.L) toast('The satellite map could not load here'); });
 document.querySelectorAll('[data-layer]').forEach(i => i.addEventListener('change', () => {
-  S.layers[i.dataset.layer] = i.checked; save(); renderMap(); renderLegend();
-  if (i.checked && (i.dataset.layer === 'lines' || i.dataset.layer === 'subs')) {
-    const id = i.dataset.layer === 'lines' ? 'hifld_lines' : 'hifld_subs';
-    if (!srcOn(id)) toast('Switch on this source in the Sources tab to load it');
-  }
+  S.layers[i.dataset.layer] = i.checked; save(); renderMap(); renderLegend(); renderImpact();
 }));
 $('sourceList').addEventListener('change', e => {
   const i = e.target.closest('[data-src]'); if (!i) return;
@@ -1024,13 +1084,15 @@ $('citeBtn').addEventListener('click', () => copyText(citationText()));
 $('csvBtn').addEventListener('click', () => { const t = regionsCsv(); if (!saveBlob(new Blob([t], { type: 'text/csv' }), 'gridwarden-regions.csv')) copyText(t); else toast('Saved gridwarden-regions.csv'); });
 $('imgBtn').addEventListener('click', () => {
   if (embedded()) return toast('Image saving is blocked in this preview. Open the page directly.');
+  if (S.base === 'sat') return toast('Switch to the standard map to save an image.');
   mapImageBlob().then(bl => { if (saveBlob(bl, 'gridwarden-map.png')) toast('Saved gridwarden-map.png'); }).catch(e => toast('Could not make the image: ' + e.message));
 });
 $('printBtn').addEventListener('click', () => { try { window.print(); } catch (e) { toast('Printing is blocked here. Use Copy report instead.'); } });
 const centre = () => (RT.vb || VIEWBOX.geo).map(v => v / 2);
-$('zoomIn').addEventListener('click', () => zoomAt(1.4, centre()[0], centre()[1]));
-$('zoomOut').addEventListener('click', () => zoomAt(1 / 1.4, centre()[0], centre()[1]));
-$('zoomReset').addEventListener('click', () => setView(1, 0, 0));
+const satOn = () => S.base === 'sat' && RT.lmap;
+$('zoomIn').addEventListener('click', () => satOn() ? RT.lmap.zoomIn() : zoomAt(1.4, centre()[0], centre()[1]));
+$('zoomOut').addEventListener('click', () => satOn() ? RT.lmap.zoomOut() : zoomAt(1 / 1.4, centre()[0], centre()[1]));
+$('zoomReset').addEventListener('click', () => satOn() ? RT.lmap.setView([38.6, -96.5], 4) : setView(1, 0, 0));
 $('themeBtn').addEventListener('click', () => {
   const cur = document.documentElement.getAttribute('data-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
   S.theme = cur === 'dark' ? 'light' : 'dark'; document.documentElement.setAttribute('data-theme', S.theme); save();
@@ -1046,6 +1108,7 @@ if (FROM_LINK) {
   if (FROM_LINK.flex) S.sim.flex = FROM_LINK.flex;
   if (FROM_LINK.pipe != null) S.sim.subPipe = FROM_LINK.pipe;
   if (FROM_LINK.color) S.colorBy = FROM_LINK.color;
+  if (FROM_LINK.base) S.base = FROM_LINK.base;
 }
 if (S.theme) document.documentElement.setAttribute('data-theme', S.theme);
 initGeo();
@@ -1053,7 +1116,7 @@ selectTab(S.tab || 'simulate');
 renderAll();
 if (FROM_LINK && FROM_LINK.st) showState(FROM_LINK.st);
 SOURCES.filter(s => s.mode === 'browser' && srcOn(s.id)).forEach(s => runLoader(s.id));
-window.GridZilla = { state: () => S, scenario, rankSites, sourcesYaml, reportText, shareUrl, citationText, regionsCsv, SOURCES, REGIONS, MARKETS };
+window.GridZilla = { state: () => S, scenario, rankSites, sourcesYaml, reportText, shareUrl, citationText, regionsCsv, impactOf, SOURCES, REGIONS, MARKETS };
 })();
 </script>
 <a href="watchlist.html" style="position:fixed;right:14px;bottom:14px;z-index:9999;background:#1F3A5F;color:#fff;padding:8px 14px;border-radius:999px;font:600 13px system-ui,sans-serif;text-decoration:none;box-shadow:0 2px 8px rgba(0,0,0,.3)">Watchlist &rarr;</a>

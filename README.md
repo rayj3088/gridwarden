@@ -14,8 +14,11 @@ Open it by double-clicking, or drop it on GitHub Pages and it is live.
 - **Map.** A geographic US map when the optional libraries load, and a tile map
   (one square per state) when they don't. Both show the same marks.
 - **Three layers**, matching the plan: Demand (data center markets, your
-  sites), Supply (flexible headroom by grid region, live transmission lines and
-  substations), Risk (water, zoning and incentive scores per state).
+  sites), Supply (flexible headroom by grid region), Impact (power share, CO2,
+  water and cost of one campus in each state), Risk (water, zoning and incentive
+  scores per state).
+- **Satellite view.** Switch the map to public-domain USGS imagery and zoom in
+  close; the state colors fade as you zoom so the imagery shows through.
 - **Simulator.** Campus size, architecture efficiency, and grid service (firm,
   or flexible at 0.25 / 0.5 / 1 percent curtailment). Results update live:
   power needed per campus, negatokens (power freed), and how many campuses fit
