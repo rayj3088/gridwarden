@@ -1,5 +1,5 @@
 {
- "schema_version": 2,
+ "schema_version": 3,
  "year": 2026,
  "period_start": "202508",
  "period_end": "202607",
@@ -11,257 +11,716 @@
   "AK": {
    "sales_gwh": 6300.9,
    "price_cents_kwh": 24.02,
-   "generation_gwh": 6776.0
+   "generation_gwh": 6776.0,
+   "mix": {
+    "coal": 0.108,
+    "gas": 0.375,
+    "nuclear": 0.0,
+    "hydro": 0.32,
+    "wind": 0.014,
+    "solar": 0.0,
+    "other": 0.183
+   }
   },
   "AL": {
    "sales_gwh": 89519.9,
    "price_cents_kwh": 12.78,
-   "generation_gwh": 143117.0
+   "generation_gwh": 143117.0,
+   "mix": {
+    "coal": 0.147,
+    "gas": 0.45,
+    "nuclear": 0.322,
+    "hydro": 0.048,
+    "wind": 0.0,
+    "solar": 0.011,
+    "other": 0.023
+   }
   },
   "AR": {
    "sales_gwh": 53544.3,
    "price_cents_kwh": 10.14,
-   "generation_gwh": 67572.9
+   "generation_gwh": 67572.9,
+   "mix": {
+    "coal": 0.278,
+    "gas": 0.372,
+    "nuclear": 0.208,
+    "hydro": 0.042,
+    "wind": 0.006,
+    "solar": 0.08,
+    "other": 0.014
+   }
   },
   "AZ": {
    "sales_gwh": 96370.6,
    "price_cents_kwh": 12.84,
-   "generation_gwh": 118289.0
+   "generation_gwh": 118289.0,
+   "mix": {
+    "coal": 0.069,
+    "gas": 0.451,
+    "nuclear": 0.263,
+    "hydro": 0.042,
+    "wind": 0.028,
+    "solar": 0.149,
+    "other": 0.0
+   }
   },
   "CA": {
    "sales_gwh": 239239.4,
    "price_cents_kwh": 28.11,
-   "generation_gwh": 198667.8
+   "generation_gwh": 198667.8,
+   "mix": {
+    "coal": 0.001,
+    "gas": 0.338,
+    "nuclear": 0.092,
+    "hydro": 0.131,
+    "wind": 0.081,
+    "solar": 0.287,
+    "other": 0.071
+   }
   },
   "CO": {
    "sales_gwh": 57161.9,
    "price_cents_kwh": 13.37,
-   "generation_gwh": 55260.3
+   "generation_gwh": 55260.3,
+   "mix": {
+    "coal": 0.165,
+    "gas": 0.352,
+    "nuclear": 0.0,
+    "hydro": 0.037,
+    "wind": 0.322,
+    "solar": 0.121,
+    "other": 0.003
+   }
   },
   "CT": {
    "sales_gwh": 27637.4,
    "price_cents_kwh": 24.58,
-   "generation_gwh": 45441.0
+   "generation_gwh": 45441.0,
+   "mix": {
+    "coal": 0.0,
+    "gas": 0.561,
+    "nuclear": 0.372,
+    "hydro": 0.006,
+    "wind": 0.0,
+    "solar": 0.019,
+    "other": 0.041
+   }
   },
   "DC": {
    "sales_gwh": 10091.7,
    "price_cents_kwh": 22.56,
-   "generation_gwh": 196.0
+   "generation_gwh": 196.0,
+   "mix": {
+    "coal": 0.0,
+    "gas": 0.26,
+    "nuclear": 0.0,
+    "hydro": 0.0,
+    "wind": 0.0,
+    "solar": 0.286,
+    "other": 0.454
+   }
   },
   "DE": {
    "sales_gwh": 11554.6,
    "price_cents_kwh": 14.99,
-   "generation_gwh": 5202.7
+   "generation_gwh": 5202.7,
+   "mix": {
+    "coal": 0.0,
+    "gas": 0.882,
+    "nuclear": 0.0,
+    "hydro": 0.0,
+    "wind": 0.001,
+    "solar": 0.042,
+    "other": 0.075
+   }
   },
   "FL": {
    "sales_gwh": 259982.4,
    "price_cents_kwh": 13.53,
-   "generation_gwh": 271162.7
+   "generation_gwh": 271162.7,
+   "mix": {
+    "coal": 0.044,
+    "gas": 0.729,
+    "nuclear": 0.103,
+    "hydro": 0.0,
+    "wind": 0.0,
+    "solar": 0.1,
+    "other": 0.024
+   }
   },
   "GA": {
    "sales_gwh": 154740.7,
    "price_cents_kwh": 12.15,
-   "generation_gwh": 147597.4
+   "generation_gwh": 147597.4,
+   "mix": {
+    "coal": 0.137,
+    "gas": 0.397,
+    "nuclear": 0.346,
+    "hydro": 0.018,
+    "wind": 0.0,
+    "solar": 0.077,
+    "other": 0.025
+   }
   },
   "HI": {
    "sales_gwh": 9136.0,
    "price_cents_kwh": 38.9,
-   "generation_gwh": 9477.4
+   "generation_gwh": 9477.4,
+   "mix": {
+    "coal": 0.0,
+    "gas": 0.0,
+    "nuclear": 0.0,
+    "hydro": 0.003,
+    "wind": 0.056,
+    "solar": 0.1,
+    "other": 0.841
+   }
   },
   "IA": {
    "sales_gwh": 59917.3,
    "price_cents_kwh": 9.97,
-   "generation_gwh": 75229.6
+   "generation_gwh": 75229.6,
+   "mix": {
+    "coal": 0.271,
+    "gas": 0.113,
+    "nuclear": 0.0,
+    "hydro": 0.018,
+    "wind": 0.576,
+    "solar": 0.018,
+    "other": 0.004
+   }
   },
   "ID": {
    "sales_gwh": 26743.9,
    "price_cents_kwh": 10.1,
-   "generation_gwh": 22456.3
+   "generation_gwh": 22456.3,
+   "mix": {
+    "coal": 0.0,
+    "gas": 0.248,
+    "nuclear": 0.0,
+    "hydro": 0.505,
+    "wind": 0.139,
+    "solar": 0.081,
+    "other": 0.027
+   }
   },
   "IL": {
    "sales_gwh": 134280.9,
    "price_cents_kwh": 14.36,
-   "generation_gwh": 194437.5
+   "generation_gwh": 194437.5,
+   "mix": {
+    "coal": 0.149,
+    "gas": 0.171,
+    "nuclear": 0.496,
+    "hydro": 0.0,
+    "wind": 0.134,
+    "solar": 0.045,
+    "other": 0.004
+   }
   },
   "IN": {
    "sales_gwh": 105543.1,
    "price_cents_kwh": 12.9,
-   "generation_gwh": 110666.6
+   "generation_gwh": 110666.6,
+   "mix": {
+    "coal": 0.42,
+    "gas": 0.367,
+    "nuclear": 0.0,
+    "hydro": 0.003,
+    "wind": 0.099,
+    "solar": 0.081,
+    "other": 0.031
+   }
   },
   "KS": {
    "sales_gwh": 42426.8,
    "price_cents_kwh": 11.85,
-   "generation_gwh": 63363.8
+   "generation_gwh": 63363.8,
+   "mix": {
+    "coal": 0.282,
+    "gas": 0.065,
+    "nuclear": 0.146,
+    "hydro": 0.0,
+    "wind": 0.49,
+    "solar": 0.012,
+    "other": 0.003
+   }
   },
   "KY": {
    "sales_gwh": 75459.6,
    "price_cents_kwh": 11.03,
-   "generation_gwh": 71937.4
+   "generation_gwh": 71937.4,
+   "mix": {
+    "coal": 0.639,
+    "gas": 0.271,
+    "nuclear": 0.0,
+    "hydro": 0.052,
+    "wind": 0.0,
+    "solar": 0.032,
+    "other": 0.007
+   }
   },
   "LA": {
    "sales_gwh": 98551.1,
    "price_cents_kwh": 9.72,
-   "generation_gwh": 107334.2
+   "generation_gwh": 107334.2,
+   "mix": {
+    "coal": 0.05,
+    "gas": 0.705,
+    "nuclear": 0.169,
+    "hydro": 0.007,
+    "wind": 0.0,
+    "solar": 0.026,
+    "other": 0.043
+   }
   },
   "MA": {
    "sales_gwh": 52057.9,
    "price_cents_kwh": 26.03,
-   "generation_gwh": 21249.0
+   "generation_gwh": 21249.0,
+   "mix": {
+    "coal": 0.0,
+    "gas": 0.713,
+    "nuclear": 0.0,
+    "hydro": 0.036,
+    "wind": 0.036,
+    "solar": 0.123,
+    "other": 0.093
+   }
   },
   "MD": {
    "sales_gwh": 59418.3,
    "price_cents_kwh": 18.48,
-   "generation_gwh": 38931.6
+   "generation_gwh": 38931.6,
+   "mix": {
+    "coal": 0.071,
+    "gas": 0.41,
+    "nuclear": 0.384,
+    "hydro": 0.034,
+    "wind": 0.019,
+    "solar": 0.047,
+    "other": 0.035
+   }
   },
   "ME": {
    "sales_gwh": 11085.7,
    "price_cents_kwh": 23.96,
-   "generation_gwh": 15215.8
+   "generation_gwh": 15215.8,
+   "mix": {
+    "coal": 0.002,
+    "gas": 0.374,
+    "nuclear": 0.0,
+    "hydro": 0.163,
+    "wind": 0.196,
+    "solar": 0.11,
+    "other": 0.154
+   }
   },
   "MI": {
    "sales_gwh": 100165.0,
    "price_cents_kwh": 15.46,
-   "generation_gwh": 124634.9
+   "generation_gwh": 124634.9,
+   "mix": {
+    "coal": 0.185,
+    "gas": 0.456,
+    "nuclear": 0.209,
+    "hydro": 0.013,
+    "wind": 0.079,
+    "solar": 0.033,
+    "other": 0.025
+   }
   },
   "MN": {
    "sales_gwh": 66501.7,
    "price_cents_kwh": 12.93,
-   "generation_gwh": 60348.8
+   "generation_gwh": 60348.8,
+   "mix": {
+    "coal": 0.213,
+    "gas": 0.208,
+    "nuclear": 0.225,
+    "hydro": 0.016,
+    "wind": 0.251,
+    "solar": 0.059,
+    "other": 0.027
+   }
   },
   "MO": {
    "sales_gwh": 80463.9,
    "price_cents_kwh": 11.9,
-   "generation_gwh": 72914.2
+   "generation_gwh": 72914.2,
+   "mix": {
+    "coal": 0.57,
+    "gas": 0.132,
+    "nuclear": 0.138,
+    "hydro": 0.013,
+    "wind": 0.097,
+    "solar": 0.04,
+    "other": 0.011
+   }
   },
   "MS": {
    "sales_gwh": 50173.0,
    "price_cents_kwh": 12.02,
-   "generation_gwh": 77215.6
+   "generation_gwh": 77215.6,
+   "mix": {
+    "coal": 0.042,
+    "gas": 0.759,
+    "nuclear": 0.132,
+    "hydro": 0.0,
+    "wind": 0.007,
+    "solar": 0.044,
+    "other": 0.017
+   }
   },
   "MT": {
    "sales_gwh": 15188.5,
    "price_cents_kwh": 11.41,
-   "generation_gwh": 29046.2
+   "generation_gwh": 29046.2,
+   "mix": {
+    "coal": 0.3,
+    "gas": 0.04,
+    "nuclear": 0.0,
+    "hydro": 0.394,
+    "wind": 0.232,
+    "solar": 0.01,
+    "other": 0.023
+   }
   },
   "NC": {
    "sales_gwh": 140555.2,
    "price_cents_kwh": 11.98,
-   "generation_gwh": 137010.6
+   "generation_gwh": 137010.6,
+   "mix": {
+    "coal": 0.136,
+    "gas": 0.411,
+    "nuclear": 0.308,
+    "hydro": 0.03,
+    "wind": 0.007,
+    "solar": 0.095,
+    "other": 0.014
+   }
   },
   "ND": {
    "sales_gwh": 30333.6,
    "price_cents_kwh": 8.52,
-   "generation_gwh": 44377.8
+   "generation_gwh": 44377.8,
+   "mix": {
+    "coal": 0.533,
+    "gas": 0.052,
+    "nuclear": 0.0,
+    "hydro": 0.058,
+    "wind": 0.356,
+    "solar": 0.0,
+    "other": 0.002
+   }
   },
   "NE": {
    "sales_gwh": 39529.7,
    "price_cents_kwh": 9.79,
-   "generation_gwh": 41131.5
+   "generation_gwh": 41131.5,
+   "mix": {
+    "coal": 0.464,
+    "gas": 0.038,
+    "nuclear": 0.167,
+    "hydro": 0.036,
+    "wind": 0.278,
+    "solar": 0.007,
+    "other": 0.01
+   }
   },
   "NH": {
    "sales_gwh": 11171.0,
    "price_cents_kwh": 23.07,
-   "generation_gwh": 18590.1
+   "generation_gwh": 18590.1,
+   "mix": {
+    "coal": 0.002,
+    "gas": 0.314,
+    "nuclear": 0.532,
+    "hydro": 0.066,
+    "wind": 0.025,
+    "solar": 0.0,
+    "other": 0.062
+   }
   },
   "NJ": {
    "sales_gwh": 73487.9,
    "price_cents_kwh": 19.8,
-   "generation_gwh": 60937.7
+   "generation_gwh": 60937.7,
+   "mix": {
+    "coal": 0.0,
+    "gas": 0.481,
+    "nuclear": 0.461,
+    "hydro": 0.0,
+    "wind": 0.0,
+    "solar": 0.035,
+    "other": 0.023
+   }
   },
   "NM": {
    "sales_gwh": 32610.9,
    "price_cents_kwh": 9.21,
-   "generation_gwh": 44753.1
+   "generation_gwh": 44753.1,
+   "mix": {
+    "coal": 0.211,
+    "gas": 0.25,
+    "nuclear": 0.0,
+    "hydro": 0.0,
+    "wind": 0.368,
+    "solar": 0.167,
+    "other": 0.004
+   }
   },
   "NV": {
    "sales_gwh": 41082.2,
    "price_cents_kwh": 10.52,
-   "generation_gwh": 45651.0
+   "generation_gwh": 45651.0,
+   "mix": {
+    "coal": 0.037,
+    "gas": 0.54,
+    "nuclear": 0.0,
+    "hydro": 0.03,
+    "wind": 0.007,
+    "solar": 0.304,
+    "other": 0.081
+   }
   },
   "NY": {
    "sales_gwh": 143034.2,
    "price_cents_kwh": 23.12,
-   "generation_gwh": 133454.1
+   "generation_gwh": 133454.1,
+   "mix": {
+    "coal": 0.0,
+    "gas": 0.477,
+    "nuclear": 0.207,
+    "hydro": 0.191,
+    "wind": 0.05,
+    "solar": 0.043,
+    "other": 0.033
+   }
   },
   "OH": {
    "sales_gwh": 166439.0,
    "price_cents_kwh": 13.76,
-   "generation_gwh": 154524.0
+   "generation_gwh": 154524.0,
+   "mix": {
+    "coal": 0.219,
+    "gas": 0.567,
+    "nuclear": 0.116,
+    "hydro": 0.002,
+    "wind": 0.019,
+    "solar": 0.061,
+    "other": 0.015
+   }
   },
   "OK": {
    "sales_gwh": 74931.7,
    "price_cents_kwh": 9.85,
-   "generation_gwh": 93639.2
+   "generation_gwh": 93639.2,
+   "mix": {
+    "coal": 0.077,
+    "gas": 0.436,
+    "nuclear": 0.0,
+    "hydro": 0.017,
+    "wind": 0.452,
+    "solar": 0.016,
+    "other": 0.003
+   }
   },
   "OR": {
    "sales_gwh": 62259.4,
    "price_cents_kwh": 11.5,
-   "generation_gwh": 68158.1
+   "generation_gwh": 68158.1,
+   "mix": {
+    "coal": 0.0,
+    "gas": 0.316,
+    "nuclear": 0.0,
+    "hydro": 0.481,
+    "wind": 0.145,
+    "solar": 0.042,
+    "other": 0.016
+   }
   },
   "PA": {
    "sales_gwh": 143067.0,
    "price_cents_kwh": 15.33,
-   "generation_gwh": 242986.9
+   "generation_gwh": 242986.9,
+   "mix": {
+    "coal": 0.068,
+    "gas": 0.577,
+    "nuclear": 0.311,
+    "hydro": 0.01,
+    "wind": 0.015,
+    "solar": 0.009,
+    "other": 0.011
+   }
   },
   "RI": {
    "sales_gwh": 7435.3,
    "price_cents_kwh": 25.8,
-   "generation_gwh": 9495.0
+   "generation_gwh": 9495.0,
+   "mix": {
+    "coal": 0.0,
+    "gas": 0.863,
+    "nuclear": 0.0,
+    "hydro": 0.0,
+    "wind": 0.018,
+    "solar": 0.081,
+    "other": 0.037
+   }
   },
   "SC": {
    "sales_gwh": 85997.4,
    "price_cents_kwh": 11.98,
-   "generation_gwh": 102509.4
+   "generation_gwh": 102509.4,
+   "mix": {
+    "coal": 0.173,
+    "gas": 0.233,
+    "nuclear": 0.524,
+    "hydro": 0.021,
+    "wind": 0.0,
+    "solar": 0.036,
+    "other": 0.013
+   }
   },
   "SD": {
    "sales_gwh": 13952.7,
    "price_cents_kwh": 11.91,
-   "generation_gwh": 22400.4
+   "generation_gwh": 22400.4,
+   "mix": {
+    "coal": 0.074,
+    "gas": 0.099,
+    "nuclear": 0.0,
+    "hydro": 0.25,
+    "wind": 0.555,
+    "solar": 0.02,
+    "other": 0.002
+   }
   },
   "TN": {
    "sales_gwh": 107563.8,
    "price_cents_kwh": 11.82,
-   "generation_gwh": 81212.9
+   "generation_gwh": 81212.9,
+   "mix": {
+    "coal": 0.21,
+    "gas": 0.207,
+    "nuclear": 0.464,
+    "hydro": 0.095,
+    "wind": 0.0,
+    "solar": 0.024,
+    "other": 0.0
+   }
   },
   "TX": {
    "sales_gwh": 521119.4,
    "price_cents_kwh": 10.39,
-   "generation_gwh": 605575.0
+   "generation_gwh": 605575.0,
+   "mix": {
+    "coal": 0.11,
+    "gas": 0.478,
+    "nuclear": 0.066,
+    "hydro": 0.002,
+    "wind": 0.221,
+    "solar": 0.118,
+    "other": 0.004
+   }
   },
   "UT": {
    "sales_gwh": 35696.9,
    "price_cents_kwh": 10.93,
-   "generation_gwh": 38170.6
+   "generation_gwh": 38170.6,
+   "mix": {
+    "coal": 0.378,
+    "gas": 0.38,
+    "nuclear": 0.0,
+    "hydro": 0.023,
+    "wind": 0.019,
+    "solar": 0.181,
+    "other": 0.02
+   }
   },
   "VA": {
    "sales_gwh": 147263.8,
    "price_cents_kwh": 12.47,
-   "generation_gwh": 104065.7
+   "generation_gwh": 104065.7,
+   "mix": {
+    "coal": 0.034,
+    "gas": 0.564,
+    "nuclear": 0.268,
+    "hydro": 0.01,
+    "wind": 0.0,
+    "solar": 0.093,
+    "other": 0.03
+   }
   },
   "VT": {
    "sales_gwh": 5473.4,
    "price_cents_kwh": 20.12,
-   "generation_gwh": 2146.2
+   "generation_gwh": 2146.2,
+   "mix": {
+    "coal": 0.0,
+    "gas": 0.001,
+    "nuclear": 0.0,
+    "hydro": 0.529,
+    "wind": 0.165,
+    "solar": 0.113,
+    "other": 0.193
+   }
   },
   "WA": {
    "sales_gwh": 90380.7,
    "price_cents_kwh": 11.76,
-   "generation_gwh": 111744.7
+   "generation_gwh": 111744.7,
+   "mix": {
+    "coal": 0.014,
+    "gas": 0.114,
+    "nuclear": 0.088,
+    "hydro": 0.689,
+    "wind": 0.077,
+    "solar": 0.006,
+    "other": 0.013
+   }
   },
   "WI": {
    "sales_gwh": 71158.0,
    "price_cents_kwh": 13.72,
-   "generation_gwh": 65303.0
+   "generation_gwh": 65303.0,
+   "mix": {
+    "coal": 0.334,
+    "gas": 0.358,
+    "nuclear": 0.154,
+    "hydro": 0.039,
+    "wind": 0.029,
+    "solar": 0.066,
+    "other": 0.02
+   }
   },
   "WV": {
    "sales_gwh": 34025.6,
    "price_cents_kwh": 11.47,
-   "generation_gwh": 54741.4
+   "generation_gwh": 54741.4,
+   "mix": {
+    "coal": 0.867,
+    "gas": 0.071,
+    "nuclear": 0.0,
+    "hydro": 0.022,
+    "wind": 0.032,
+    "solar": 0.005,
+    "other": 0.003
+   }
   },
   "WY": {
    "sales_gwh": 17517.1,
    "price_cents_kwh": 9.91,
-   "generation_gwh": 44398.6
+   "generation_gwh": 44398.6,
+   "mix": {
+    "coal": 0.525,
+    "gas": 0.118,
+    "nuclear": 0.0,
+    "hydro": 0.028,
+    "wind": 0.307,
+    "solar": 0.011,
+    "other": 0.01
+   }
   }
  }
 }

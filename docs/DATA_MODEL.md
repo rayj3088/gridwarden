@@ -11,7 +11,6 @@ The engine writes, and the app imports, one JSON file:
       ],
       "regions": {"PJM": {"h05": 20}},
       "risk":    {"OH": {"water": 1, "zoning": 2, "incentives": 1}},
-      "lines":   {"type": "FeatureCollection", "features": []},
       "sources": ["wri_aqueduct"]
     }
 
@@ -19,7 +18,6 @@ The engine writes, and the app imports, one JSON file:
   MISO, ERCOT, SPP, SOCO, OTHER. `inv` and `uc` are MW.
 - `regions` overrides headroom at 0.5% curtailment, in GW.
 - `risk` scores run 0 (easy) to 5 (hard).
-- `lines` is GeoJSON drawn on the geographic map.
 - `sources` lists source ids the engine refreshed, for the Sources tab.
 
 Sites import separately as CSV: `name, lat, lon, mw, state`.

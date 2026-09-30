@@ -11,7 +11,7 @@ nothing leaves the machine until you pass --fetch.
 
     python3 engine/gridzilla_engine.py --plan
     python3 engine/gridzilla_engine.py --fetch
-    python3 engine/gridzilla_engine.py --fetch --only hifld_lines
+    python3 engine/gridzilla_engine.py --fetch --only lbnl_queued_up
 
 Add a source: switch it on in the app, copy sources.yaml over, then write one
 function here and register it in CONNECTORS. A connector takes the source dict
@@ -25,7 +25,6 @@ import json
 import os
 import sys
 import time
-import urllib.error
 import urllib.parse
 import urllib.request
 
@@ -87,37 +86,6 @@ def api_key(source: dict) -> str:
 
 
 # ------------------------------------------------------------ connectors
-
-def arcgis(url: str, where: str, **extra) -> dict:
-    params = {"where": where, "outFields": "*", "returnGeometry": "true",
-              "outSR": "4326", "f": "geojson", "resultRecordCount": "2000"}
-    params.update(extra)
-    req = urllib.request.Request(url + "?" + urllib.parse.urlencode(params),
-                                 headers={"User-Agent": "gridzilla-engine"})
-    with urllib.request.urlopen(req, timeout=TIMEOUT) as r:
-        doc = json.loads(r.read().decode("utf-8"))
-    if "error" in doc:
-        raise RuntimeError(doc["error"].get("message", "service error"))
-    if "features" not in doc:
-        raise RuntimeError("no features in the response")
-    return doc
-
-
-def connect_hifld_lines(source: dict) -> dict:
-    try:
-        doc = arcgis(source["url"], "VOLTAGE>=345", maxAllowableOffset="0.02")
-    except (urllib.error.HTTPError, RuntimeError):
-        doc = arcgis(source["url"], "1=1", maxAllowableOffset="0.02")
-    return {"lines": doc}
-
-
-def connect_hifld_subs(source: dict) -> dict:
-    try:
-        doc = arcgis(source["url"], "MAX_VOLT>=345")
-    except (urllib.error.HTTPError, RuntimeError):
-        doc = arcgis(source["url"], "1=1")
-    return {"substations": doc}
-
 
 # LBNL republishes this yearly at a dated URL; update when a new edition
 # ships (check https://emp.lbl.gov/queues for the current link).
@@ -191,11 +159,9 @@ def connect_lbnl_queued_up(source: dict) -> dict:
 
 
 # Write the next one here, then add it below. A connector returns any of:
-#   {"markets": [...]} {"regions": {...}} {"risk": {...}} {"lines": geojson}
+#   {"markets": [...]} {"regions": {...}} {"risk": {...}}
 #   or any other key -- it is merged into the output document as-is.
 CONNECTORS = {
-    "hifld_lines": connect_hifld_lines,
-    "hifld_subs": connect_hifld_subs,
     "lbnl_queued_up": connect_lbnl_queued_up,
 }
 

@@ -5,8 +5,11 @@ Uses monthly state data to build a trailing 12-month picture for every state
 and DC: retail sales (GWh), average retail price (cents/kWh, weighted by
 sales) and net generation (GWh). Standard library only.
 
+It also records where each state's power comes from (coal, gas, nuclear, hydro,
+wind, utility-scale solar, other) over the same 12 months.
+
 Source: https://www.eia.gov/opendata/bulk/ELEC.zip (series ELEC.SALES.<ST>-ALL.M,
-ELEC.PRICE.<ST>-ALL.M, ELEC.GEN.ALL-<ST>-99.M).
+ELEC.PRICE.<ST>-ALL.M, ELEC.GEN.<FUEL>-<ST>-99.M).
 
 Run:  python scripts/update_data.py
 Exit codes: 0 = file updated, 3 = nothing new, 1 = error or failed checks.
@@ -18,6 +21,7 @@ URL = os.environ.get("EIA_BULK_URL", "https://www.eia.gov/opendata/bulk/ELEC.zip
 OUT = os.path.join(os.path.dirname(__file__), "..", "data", "state_electricity.json")
 STATES = ("AL AK AZ AR CA CO CT DE DC FL GA HI ID IL IN IA KS KY LA ME MD MA MI MN MS MO MT NE NV NH "
           "NJ NM NY NC ND OH OK OR PA RI SC SD TN TX UT VT VA WA WV WI WY").split()
+FUELS = {"coal": "COW", "gas": "NG", "nuclear": "NUC", "hydro": "HYC", "wind": "WND", "solar": "SUN"}
 MONTHS = "January February March April May June July August September October November December".split()
 
 
@@ -27,6 +31,8 @@ def wanted():
         w[f"ELEC.SALES.{st}-ALL.M"] = (st, "sales")
         w[f"ELEC.PRICE.{st}-ALL.M"] = (st, "price")
         w[f"ELEC.GEN.ALL-{st}-99.M"] = (st, "gen")
+        for name, code in FUELS.items():
+            w[f"ELEC.GEN.{code}-{st}-99.M"] = (st, "fuel:" + name)
     return w
 
 
@@ -101,7 +107,14 @@ def main():
         sales = sum(s[(st, "sales")][m] for m in ms)                       # million kWh = GWh
         price = sum(s[(st, "price")][m] * s[(st, "sales")][m] for m in ms) / sales
         gen = sum(s[(st, "gen")][m] for m in ms)                             # thousand MWh = GWh
-        states[st] = {"sales_gwh": round(sales, 1), "price_cents_kwh": round(price, 2), "generation_gwh": round(gen, 1)}
+        mix, used = {}, 0.0
+        for name in FUELS:
+            ser = s.get((st, "fuel:" + name), {})   # a state without a fuel has no series
+            g = max(0.0, sum(ser.get(m, 0.0) for m in ms))
+            mix[name] = round(g / gen, 3) if gen > 0 else 0.0
+            used += g
+        mix["other"] = round(max(0.0, gen - used) / gen, 3) if gen > 0 else 0.0
+        states[st] = {"sales_gwh": round(sales, 1), "price_cents_kwh": round(price, 2), "generation_gwh": round(gen, 1), "mix": mix}
 
     start = ms[-1]
     label = f"12 months through {MONTHS[int(end[4:]) - 1]} {end[:4]}"
@@ -110,7 +123,7 @@ def main():
         old = json.load(open(OUT))
     except (OSError, ValueError):
         old = {"states": {}}
-    if old.get("period_end", "") >= end:
+    if old.get("period_end", "") >= end and old.get("schema_version", 0) >= 3:
         print(f"Already current ({old.get('period_label')}).")
         return 3
     for st, v in states.items():
@@ -123,6 +136,9 @@ def main():
             for k in ("sales_gwh", "generation_gwh"):
                 if o[k] and abs(v[k] / o[k] - 1) > 0.5:
                     problems.append(f"{st}: {k} changed by more than 50% ({o[k]} -> {v[k]})")
+    for name in FUELS:
+        if not any((st, "fuel:" + name) in s for st in STATES):
+            problems.append(f"no {name} series found for any state (EIA may have renamed them)")
     total = sum(v["sales_gwh"] for v in states.values())
     if not (3_000_000 < total < 6_000_000):
         problems.append(f"US retail sales total {total:,.0f} GWh looks wrong")
@@ -130,7 +146,7 @@ def main():
         print("Checks failed; not writing:\n  " + "\n  ".join(problems))
         return 1
 
-    new = {"schema_version": 2, "year": int(end[:4]), "period_start": start, "period_end": end, "period_label": label,
+    new = {"schema_version": 3, "year": int(end[:4]), "period_start": start, "period_end": end, "period_label": label,
            "updated_on": date.today().isoformat(),
            "source": f"U.S. Energy Information Administration, monthly state data ({label})",
            "source_url": "https://www.eia.gov/electricity/data/browser/", "states": dict(sorted(states.items()))}

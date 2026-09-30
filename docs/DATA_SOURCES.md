@@ -17,9 +17,9 @@ uses each state's main grid region and is approximate.
 
 ## Switchable sources
 
-`config/sources.yaml` holds all 25. Live in the browser: HIFLD transmission
-lines and substations. Engine connectors to write next, in the order that
-buys the most: LBNL Queued Up (who is ahead of you in line), EIA Open Data
+`config/sources.yaml` lists the switchable sources. Gridwarden works at state and
+regional level only; it does not map individual grid infrastructure. Engine
+connectors to write next, in the order that buys the most: LBNL Queued Up (who is ahead of you in line), EIA Open Data
 (regional load), GridStatus.io (real-time ISO), WRI Aqueduct (water), FEMA
 National Risk Index (hazards), and a data center pipeline feed such as
 Aterio or Cleanview (commercial licence).

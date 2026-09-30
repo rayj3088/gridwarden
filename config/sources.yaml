@@ -15,20 +15,6 @@ sources:
     mode: snapshot
     enabled: true
     url: https://www.cbre.com/insights/books/north-america-data-center-trends-h1-2026
-  - id: hifld_lines
-    organization: "HIFLD via ArcGIS"
-    dataset: "Transmission lines, 345 kV and up"
-    layer: supply
-    mode: browser
-    enabled: true
-    url: https://services2.arcgis.com/LYMgRMwHfrWWEg3s/arcgis/rest/services/HIFLD_US_Electric_Power_Transmission_Lines/FeatureServer/0/query
-  - id: hifld_subs
-    organization: "HIFLD via ArcGIS"
-    dataset: "Electric substations"
-    layer: supply
-    mode: browser
-    enabled: true
-    url: https://services5.arcgis.com/HDRa0B57OVrv2E1q/arcgis/rest/services/Electric_Substations/FeatureServer/0/query
   - id: gridstatus
     organization: "GridStatus.io"
     dataset: "Real-time ISO load, frequency, nodal prices"
@@ -52,13 +38,6 @@ sources:
     enabled: false
     url: https://api.eia.gov/v2/
     needs_key: true
-  - id: hifld
-    organization: "U.S. Government"
-    dataset: "Homeland Infrastructure Foundation-Level Data"
-    layer: supply
-    mode: engine
-    enabled: true
-    url: https://hifld-geoplatform.opendata.arcgis.com/
   - id: aterio_cleanview
     organization: "Aterio / Cleanview"
     dataset: "Data center pipeline: operational, construction, announced"

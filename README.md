@@ -18,7 +18,8 @@ Open it by double-clicking, or drop it on GitHub Pages and it is live.
   water and cost of one campus in each state), Risk (water, zoning and incentive
   scores per state).
 - **Opportunities and connections.** Each state card shows its power flow (what it
-  generates versus what it uses), neighbors with a complementary profile, states with a
+  generates versus what it uses), where its power comes from (coal, gas, nuclear,
+  hydro, wind, solar), neighbors with a complementary profile, states with a
   similar profile, unused clean power on its grid, and the changing power fleet nearby,
   with links to read more. These are possibilities to explore, not rankings.
 - **Satellite view.** Switch the map to public-domain USGS imagery and zoom in
@@ -134,3 +135,8 @@ permissions, tick "Allow GitHub Actions to create and approve pull requests". To
 open the Actions tab > "Update state electricity data" > Run workflow.
 
 The page falls back to its built-in numbers if the file can't be loaded.
+
+## Help keep it right
+
+Spotted a wrong number or an out-of-date fact? Open an issue with the "Data correction"
+form and a link to a source. See `CONTRIBUTING.md` for how to add a source or feature.

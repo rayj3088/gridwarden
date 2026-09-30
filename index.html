@@ -3,6 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Free, sourced map of US grid capacity and what a new AI data center would mean for each state: power, carbon, water, cost and opportunities between states.">
+<meta property="og:title" content="Gridwarden: grid capacity and AI data centers, state by state">
+<meta property="og:description" content="What would a data center mean for your state? Power, carbon, water, cost, and where states complement each other. Free and open source.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://rayj3088.github.io/gridwarden/">
+<meta name="twitter:card" content="summary">
 <title>Gridwarden: grid capacity and risk for AI data centers</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -194,6 +200,7 @@ dialog textarea{width:100%;height:50vh;font:12px/1.45 ui-monospace,Menlo,Consola
         <option value="supply">Color: supply headroom</option>
         <option value="impact">Color: campus impact</option>
         <option value="trade">Color: power flow</option>
+        <option value="lowcarbon">Color: low-carbon share</option>
         <option value="risk">Color: risk</option>
         <option value="none">Color: none</option>
       </select>
@@ -238,7 +245,7 @@ dialog textarea{width:100%;height:50vh;font:12px/1.45 ui-monospace,Menlo,Consola
       </div>
       <h2>Per campus</h2>
       <div class="stat"><span>Grid power needed</span><b id="needOut"></b></div>
-      <div class="stat"><span>Negatokens (power freed)</span><b id="freedOut"></b></div>
+      <div class="stat"><span>Power freed by efficiency</span><b id="freedOut"></b></div>
       <div class="btns">
         <button class="btn primary" type="button" id="reportBtn">Copy report</button>
         <button class="btn" type="button" id="printBtn">Print or save PDF</button>
@@ -257,7 +264,7 @@ dialog textarea{width:100%;height:50vh;font:12px/1.45 ui-monospace,Menlo,Consola
       <h2>Supply</h2>
       <div class="row"><div class="t"><b>Flexible headroom by grid region</b><small>Duke Nicholas Institute, 2025</small></div><label class="switch"><input type="checkbox" data-layer="supply" aria-label="Headroom"><span></span></label></div>
       <h2>Impact</h2>
-      <div class="row"><div class="t"><b>Opportunities and partners</b><small>Power flow, complementary neighbors, unused clean power, changing power fleet. EIA, Modo Energy, Amperon</small></div><label class="switch"><input type="checkbox" data-layer="opps" aria-label="Opportunities and partners"><span></span></label></div>
+      <div class="row"><div class="t"><b>Opportunities and partners</b><small>Power flow, generation mix, complementary neighbors, unused clean power, changing power fleet. EIA, Modo Energy, Amperon</small></div><label class="switch"><input type="checkbox" data-layer="opps" aria-label="Opportunities and partners"><span></span></label></div>
       <div class="row"><div class="t"><b>Campus impact by state</b><small>Power, carbon, water and cost of one campus. EIA 2024, EPA eGRID2023, Berkeley Lab 2024</small></div><label class="switch"><input type="checkbox" data-layer="impact" aria-label="Campus impact"><span></span></label></div>
       <h2>Risk</h2>
       <p class="hint">Water stress, zoning friction and incentives, scored 0 (easy) to 5 (hard) per state. Import your own scores, or load demo values to see the layer work.</p>
@@ -325,6 +332,7 @@ dialog textarea{width:100%;height:50vh;font:12px/1.45 ui-monospace,Menlo,Consola
         <li>The efficiency setting is a what-if. The 80% preset is a design target, not a measured result.</li>
         <li>Flexible service is not verified here. Utilities decide what they will count.</li>
         <li>Tracked construction only covers markets with published figures, so real queues are longer.</li>
+        <li>Generation mix counts utility-scale plants in the state over the latest 12 months; rooftop solar and power bought from other states are not included.</li>
         <li>Power flow compares what a state generates with what its customers buy. Part of any gap is normal line losses and plants' own use (about 8% nationally). Partners are suggestions from these numbers, not existing agreements.</li>
         <li>Impact figures assume the campus runs at full size all year, so they are an upper bound. Cost uses the state's average retail price; very large customers usually pay less. Water uses US averages, not local cooling designs.</li>
         <li>Land, noise, jobs and local taxes are not part of these numbers. Risk scores appear only if you load them, and demo values are random.</li>
@@ -399,6 +407,9 @@ const IMPACT = {AL:[87522,11.90,711.0,142921],AK:[6046,22.17,809.8,6690],AZ:[908
 const WATER_DIRECT = 17e9 / 176e9, WATER_INDIRECT = 211e9 / 176e9; // gallons per kWh
 // US generation / retail sales (EIA 2024). A state above this ratio makes more than it uses.
 let US_GEN_TO_SALES = 4308634 / 3975382;
+// Generation mix per state (share of generation), filled from data/state_electricity.json when available.
+const MIX = {};
+const lowCarbon = m => m ? m.nuclear + m.hydro + m.wind + m.solar : null;
 // Neighbouring states (shared land border; DC with MD and VA). Made symmetric below.
 const ADJ = (() => {
   const raw = { AL: 'FL GA MS TN', AZ: 'CA CO NM NV UT', AR: 'LA MO MS OK TN TX', CA: 'AZ NV OR', CO: 'AZ KS NE NM OK UT WY', CT: 'MA NY RI',
@@ -445,7 +456,6 @@ const SOURCES = [
   { id: 'gridstatus', org: 'GridStatus.io', dataset: 'Real-time ISO load, frequency, nodal prices', layer: 'Supply', mode: 'engine', key: true, url: 'https://www.gridstatus.io' },
   { id: 'lbnl_queued_up', org: 'Lawrence Berkeley National Laboratory', dataset: 'Queued Up: interconnection queues', layer: 'Supply', mode: 'engine', url: 'https://emp.lbl.gov/queues' },
   { id: 'eia_open_data', org: 'U.S. Energy Information Administration', dataset: 'Open Data API', layer: 'Supply', mode: 'engine', key: true, url: 'https://api.eia.gov/v2/' },
-  { id: 'hifld', org: 'U.S. Government', dataset: 'Homeland Infrastructure Foundation-Level Data', layer: 'Supply', mode: 'engine', url: 'https://hifld-geoplatform.opendata.arcgis.com/' },
   { id: 'aterio_cleanview', org: 'Aterio / Cleanview', dataset: 'Data center pipeline: operational, construction, announced', layer: 'Demand', mode: 'engine', key: true, note: 'Commercial license' },
   { id: 'nrel_data_centers', org: 'NREL', dataset: 'U.S. data centers against high-voltage lines', layer: 'Demand', mode: 'engine' },
   { id: 'baker_data_centers', org: 'Baker Institute', dataset: 'U.S. Data Centers and Infrastructure map', layer: 'Demand', mode: 'engine' },
@@ -633,6 +643,10 @@ function stateStyle(st) {
     const im = impactOf(st, S.sim.mw);
     return im == null ? { fill: 'var(--queue)', fillOpacity: 1 } : { fill: 'var(--amber)', fillOpacity: 0.12 + 0.83 * Math.min(1, Math.sqrt(im.share / 0.5)) };
   }
+  if (mode === 'lowcarbon') {
+    const lc = lowCarbon(MIX[st]);
+    return lc == null ? { fill: 'var(--queue)', fillOpacity: 1 } : { fill: 'var(--green)', fillOpacity: 0.12 + 0.83 * Math.min(1, lc) };
+  }
   if (mode === 'trade') {
     const t = tradeOf(st);
     if (!t || t.kind === 'balanced') return { fill: 'var(--land)', fillOpacity: 1 };
@@ -702,6 +716,9 @@ function renderLegend() {
     if (!srcOn('duke_headroom')) L.push('<span>Supply source is switched off</span>');
     else if (FLEX[S.sim.flex].scale == null) L.push(sw('var(--queue)', 1, 'Firm service: waits in the interconnection queue'));
     else L.push(sw('var(--green)', .3, 'Less headroom'), sw('var(--green)', .8, 'More headroom (per region)'));
+  } else if (S.colorBy === 'lowcarbon') {
+    if (Object.keys(MIX).length) L.push(sw('var(--green)', .2, 'Mostly coal, gas or oil'), sw('var(--green)', .95, 'Mostly nuclear, hydro, wind and solar'));
+    else L.push('<span>Generation mix loads from the latest data file</span>');
   } else if (S.colorBy === 'trade') {
     L.push(sw('var(--cyan)', .8, 'Generates more than it uses'), sw('var(--land)', 1, 'Roughly even'), sw('var(--violet)', .8, 'Uses more than it generates'));
   } else if (S.colorBy === 'impact') {
@@ -791,9 +808,15 @@ function tradeLine(st) {
   if (t.kind === 'importer') return base + ` It generates about <b>${Math.round(t.raw * 100)}%</b> of what it uses and draws the rest from the wider grid.`;
   return base + ' Generation and use are roughly even.';
 }
+const FUEL_NAMES = { coal: 'coal', gas: 'natural gas', nuclear: 'nuclear', hydro: 'hydro', wind: 'wind', solar: 'solar', other: 'other sources' };
+function mixLine(st) {
+  const m = MIX[st]; if (!m) return '';
+  const top = Object.keys(FUEL_NAMES).map(k => [k, m[k] || 0]).filter(x => x[1] >= 0.01).sort((a, b) => b[1] - a[1]);
+  return `<p><b>Where its power comes from:</b> ${top.map(x => `${Math.round(x[1] * 100)}% ${FUEL_NAMES[x[0]]}`).join(', ')}. Low-carbon share (nuclear, hydro, wind, solar): <b>${Math.round(lowCarbon(m) * 100)}%</b>.</p>`;
+}
 function oppsText(st) {
   if (!IMPACT[st]) return '';
-  const sc = scenario(), name = STATES[st][0], t = tradeOf(st), parts = ['<p>' + tradeLine(st) + '</p>'];
+  const sc = scenario(), name = STATES[st][0], t = tradeOf(st), parts = ['<p>' + tradeLine(st) + '</p>' + mixLine(st)];
   const ps = partnersOf(st);
   if (ps.length) parts.push(`<p><b>Neighbors with a complementary power profile:</b></p><ul>` +
     ps.map(x => `<li>${esc(STATES[x.st][0])}: ${x.t.kind === 'exporter' ? `generates ${x.t.raw.toFixed(1)}× what it uses` : `generates ${Math.round(x.t.raw * 100)}% of what it uses`}${stateRegion(x.st) === stateRegion(st) && stateRegion(st) !== 'OTHER' ? ', same grid region' : ''}</li>`).join('') + '</ul>');
@@ -1030,7 +1053,7 @@ function reportText() {
   const sc = scenario(); const f = FLEX[sc.flex];
   const L = ['GRIDWARDEN SCENARIO REPORT', new Date().toISOString().slice(0, 10), '',
     `Campus size: ${fmtMW(sc.mw)}`, `Architecture efficiency: ${sc.eff}% (what-if, not measured)`, `Grid service: ${f.long}`,
-    `Grid power needed per campus: ${fmtMW(sc.need)}`, `Negatokens (power freed per campus): ${fmtMW(sc.freed)}`, ''];
+    `Grid power needed per campus: ${fmtMW(sc.need)}`, `Power freed by efficiency (per campus): ${fmtMW(sc.freed)}`, ''];
   if (sc.total.head == null) L.push('Firm service: headroom not estimated; new firm loads wait in interconnection queues.');
   else {
     L.push(`National headroom: ${fmtGW(sc.total.head)}; left after tracked construction: ${fmtGW(sc.total.rem)}`);
@@ -1055,7 +1078,7 @@ function sourcesYaml() {
    The address bar always describes the current view, so any link you copy
    reopens the same scenario (and the same state card, if one is open).
    ===================================================================== */
-const COLOR_MODES = ['supply', 'impact', 'trade', 'risk', 'none'];
+const COLOR_MODES = ['supply', 'impact', 'trade', 'lowcarbon', 'risk', 'none'];
 function hashParams() {
   const p = new URLSearchParams();
   p.set('mw', S.sim.mw); p.set('eff', S.sim.eff); p.set('flex', S.sim.flex); p.set('pipe', S.sim.subPipe ? 1 : 0); p.set('color', S.colorBy); p.set('map', S.base === 'sat' ? 'sat' : 'std');
@@ -1233,7 +1256,8 @@ fetch('data/state_electricity.json', { cache: 'no-cache' }).then(r => r.ok ? r.j
   if (!d || !d.states || !d.year) return;
   const keys = Object.keys(IMPACT);
   if (!keys.every(st => { const v = d.states[st]; return v && v.sales_gwh > 0 && v.generation_gwh > 0 && v.price_cents_kwh > 0; })) return;
-  keys.forEach(st => { const v = d.states[st]; IMPACT[st][0] = v.sales_gwh; IMPACT[st][1] = v.price_cents_kwh; IMPACT[st][3] = v.generation_gwh; });
+  keys.forEach(st => { const v = d.states[st]; IMPACT[st][0] = v.sales_gwh; IMPACT[st][1] = v.price_cents_kwh; IMPACT[st][3] = v.generation_gwh;
+    if (v.mix && ['coal', 'gas', 'nuclear', 'hydro', 'wind', 'solar'].every(k => typeof v.mix[k] === 'number')) MIX[st] = v.mix; });
   const tot = k => keys.reduce((a, st) => a + d.states[st][k], 0);
   US_GEN_TO_SALES = tot('generation_gwh') / tot('sales_gwh');
   const src = SOURCES.find(x => x.id === 'eia_state'); if (src) src.asOf = d.period_label || String(d.year);
@@ -1241,7 +1265,7 @@ fetch('data/state_electricity.json', { cache: 'no-cache' }).then(r => r.ok ? r.j
   if (RT.sel && document.getElementById('info').classList.contains('show')) showState(RT.sel);
 }).catch(() => { /* offline or opened as a local file: keep built-in data */ });
 SOURCES.filter(s => s.mode === 'browser' && srcOn(s.id)).forEach(s => runLoader(s.id));
-window.GridZilla = { state: () => S, scenario, rankSites, sourcesYaml, reportText, shareUrl, citationText, regionsCsv, impactOf, tradeOf, partnersOf, similarTo, SOURCES, REGIONS, MARKETS };
+window.GridZilla = { MIX, state: () => S, scenario, rankSites, sourcesYaml, reportText, shareUrl, citationText, regionsCsv, impactOf, tradeOf, partnersOf, similarTo, SOURCES, REGIONS, MARKETS };
 })();
 </script>
 <a href="watchlist.html" style="position:fixed;right:14px;bottom:14px;z-index:9999;background:#1F3A5F;color:#fff;padding:8px 14px;border-radius:999px;font:600 13px system-ui,sans-serif;text-decoration:none;box-shadow:0 2px 8px rgba(0,0,0,.3)">Watchlist &rarr;</a>
