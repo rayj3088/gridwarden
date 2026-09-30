@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Gridwarden Watchlist</title>
-<meta name="description" content="What has been reported about data center pauses, votes and public opinion, with sources.">
+<meta name="description" content="The data center story in five points: public opinion, new rules, building, stalls and bottlenecks. Every fact is sourced.">
 <style>
 :root{--bg:#f4f6f9;--card:#fff;--ink:#1a2433;--mute:#5b6778;--line:#dde3ea;--navy:#1F3A5F;--teal:#2A7F8E;
 --ok-bg:#e3f1e5;--ok:#1e6b34;--warn-bg:#fff3d6;--warn:#8a5a00;--bad-bg:#f3e6e6;--bad:#8a2c2c;--link:#1155cc}
@@ -33,11 +33,18 @@ h2{font-size:1.15rem;margin:34px 0 4px;color:var(--navy)}
 .c-Reported{background:var(--warn-bg);color:var(--warn)}
 .c-Unverified{background:var(--bad-bg);color:var(--bad)}
 a{color:var(--link)}
-.diff{border-left:4px solid var(--teal)}
-.diff h3{margin:0 0 4px;font-size:.98rem}
-.lock{border:2px dashed var(--line);text-align:center;padding:20px 16px}
-.lock b{font-size:1.05rem}
-.btn{display:inline-block;margin-top:10px;background:var(--navy);color:#fff;padding:9px 16px;border-radius:8px;text-decoration:none;font-weight:600}
+.topic{margin-top:18px}
+.topic h2{margin:0 0 8px}
+.stat{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin:0 0 8px}
+.stat .big{color:var(--navy);font-size:1.9rem;font-weight:700;line-height:1.1}
+@media (prefers-color-scheme:dark){.stat .big{color:var(--teal)}}
+.stat span{color:var(--mute);font-size:.92rem}
+.sum{margin:0 0 8px;max-width:65ch}
+details.src{margin-top:8px;border-top:1px solid var(--line);padding-top:8px}
+details.src summary{cursor:pointer;color:var(--mute);font-size:.9rem}
+details.src .card{margin-top:8px;padding:10px 12px}
+details.src .stmt{font-size:.93rem}
+.caveat{font-size:.88rem;color:var(--mute);margin:6px 0 0}
 footer{margin-top:36px;font-size:.85rem;color:var(--mute)}
 footer ul{padding-left:18px}
 .note{background:var(--warn-bg);color:var(--warn);border-radius:10px;padding:10px 14px;font-size:.9rem;margin-top:14px}
@@ -48,7 +55,7 @@ footer ul{padding-left:18px}
 <header><div class="wrap">
   <a class="back" href="index.html">&larr; Back to the map</a>
   <h1>Gridwarden Watchlist</h1>
-  <p>What has been reported about data center pauses, votes and public opinion. Every line names its source.</p>
+  <p>The data center story in five points. Each one is backed by named sources you can open.</p>
   <span class="pill" id="asof">Loading&hellip;</span>
 </div></header>
 <main class="wrap">
@@ -106,94 +113,34 @@ footer ul{padding-left:18px}
   }).then(function (d) {
     document.getElementById("asof").textContent = "Data as of " + d.as_of;
     document.getElementById("disclaimer").textContent = d.disclaimer;
+    var byId = {}; d.claims.forEach(function (c) { byId[c.id] = c; });
 
-    var by = function (t) { return d.claims.filter(function (c) { return c.fact_type === t; }); };
-
-    var g1 = section("What people think",
-      "National polls and votes. Polls agree on direction but differ on wording and answer options, so the numbers vary.");
-    g1.className = "grid two";
-    by("Public opinion").forEach(function (c) { g1.appendChild(claimCard(c, true)); });
-    by("Ballot measure").forEach(function (c) { g1.appendChild(claimCard(c, true)); });
-
-    var g2 = section("Government actions",
-      "State orders, utility rules and federal guidance, as reported. Originals are being added as we pull them.");
-    by("State policy").forEach(function (c) { g2.appendChild(claimCard(c, false)); });
-    by("Regulatory action").forEach(function (c) { g2.appendChild(claimCard(c, false)); });
-
-    var off = by("Official statement");
-    if (off.length) {
-      var go = section("What officials say", "Statements from agencies and officials, as reported.");
-      off.forEach(function (c) { go.appendChild(claimCard(c, false)); });
-    }
-
-    var g3 = section("Industry counts", "Counts from trackers and analysts. Definitions differ, see below.");
-    g3.className = "grid two";
-    by("Industry-wide count").forEach(function (c) { g3.appendChild(claimCard(c, true)); });
-    by("Industry finding").forEach(function (c) { g3.appendChild(claimCard(c, false)); });
-
-    if (d.discrepancies.length) {
-      var g4 = section("Where reports differ",
-        "A difference is not an accusation. Sources may count different things.");
-      d.discrepancies.forEach(function (x) {
-        var card = el("div", "card diff");
-        card.appendChild(el("h3", null, x.type + " (" + x.id + ")"));
-        card.appendChild(el("p", "stmt", x.description));
-        var m = el("div", "meta");
-        m.appendChild(el("span", null, "Compares " + x.claim_a + (x.claim_b ? " and " + x.claim_b : "")));
-        m.appendChild(el("span", null, "Status: " + x.status));
-        card.appendChild(m);
-        if (x.what_would_settle_it) card.appendChild(el("p", "sub", "What would settle it: " + x.what_would_settle_it));
-        g4.appendChild(card);
-      });
-    }
-
-    if (d.factors && d.factors.length) {
-      var gf = section("What we track",
-        "Ten readiness categories for every project. Status shows how far the data layer has come. Project-level detail is in the paid API.");
-      gf.className = "grid two";
-      d.factors.forEach(function (f) {
-        var card = el("div", "card");
-        card.appendChild(el("b", null, f.category));
-        card.appendChild(el("p", "stmt", f.why_buyers_care));
-        var m = el("div", "meta");
-        m.appendChild(el("span", "chip c-Reported", f.layer_status));
-        card.appendChild(m);
-        gf.appendChild(card);
-      });
-    }
-
-    var lk = d.locked || {};
-    var box = el("div", "card lock");
-    box.appendChild(el("b", null, "Project-level readiness is in the paid API"));
-    box.appendChild(el("p", "sub",
-      "Readiness checklists across " + (lk.readiness_categories || 10) + " categories (" + (lk.readiness_items || 0) +
-      " items so far), state solar and wind totals, a renewables sizing estimator, and financing, contract and legal signals for individual projects (" +
-      (lk.projects_profiled || 0) + " profiled, " + (lk.claims || 0) + " sourced claims, " + (lk.discrepancies || 0) +
-      " flagged differences), plus full history and alerts."));
-    var b = el("a", "btn", "See plans"); b.href = "index.html";
-    box.appendChild(b);
-    app.appendChild(el("h2", null, "Want more?"));
-    app.appendChild(box);
+    d.topics.forEach(function (t) {
+      var card = el("section", "card topic");
+      card.appendChild(el("h2", null, t.title));
+      var st = el("div", "stat");
+      st.appendChild(el("span", "big", t.stat));
+      st.appendChild(el("span", null, t.stat_label));
+      card.appendChild(st);
+      card.appendChild(el("p", "sum", t.summary));
+      if (t.note) card.appendChild(el("p", "caveat", t.note));
+      var det = el("details", "src");
+      det.appendChild(el("summary", null, "Sources (" + t.claims.length + ")"));
+      t.claims.forEach(function (id) { if (byId[id]) det.appendChild(claimCard(byId[id], false)); });
+      card.appendChild(det);
+      app.appendChild(card);
+    });
 
     var f = el("footer");
     f.appendChild(el("p", null, "How we write this:"));
     var ul = el("ul");
     ["Every fact names who said it and links to it.",
-     "We write “reported” or “says,” not “is,” unless we have opened the official record ourselves.",
+     "We write \u201creported\u201d or \u201csays,\u201d not \u201cis,\u201d unless we have opened the official record ourselves.",
      "We record what each source said. We do not guess at motives or predict outcomes.",
-     "Found a mistake? Use “Dispute this” on any entry and we will review it."].forEach(function (t) {
+     "Found a mistake? Open the sources under any point and use \u201cDispute this.\u201d"].forEach(function (t) {
       ul.appendChild(el("li", null, t));
     });
     f.appendChild(ul);
-    f.appendChild(el("p", null, "Sources used on this page:"));
-    var sl = el("ul");
-    d.sources.forEach(function (s) {
-      var li = el("li");
-      if (s.link) li.appendChild(link(s.name, s.link)); else li.textContent = s.name;
-      li.appendChild(document.createTextNode(" (" + s.kind + ")"));
-      sl.appendChild(li);
-    });
-    f.appendChild(sl);
     app.appendChild(f);
   }).catch(function (e) {
     document.getElementById("asof").textContent = "Could not load data";
