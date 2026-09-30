@@ -17,6 +17,10 @@ Open it by double-clicking, or drop it on GitHub Pages and it is live.
   sites), Supply (flexible headroom by grid region), Impact (power share, CO2,
   water and cost of one campus in each state), Risk (water, zoning and incentive
   scores per state).
+- **Opportunities and partners.** Each state card shows whether the state makes more
+  power than it uses, neighbors that complement it, the states most like it,
+  wasted clean power on its grid, and coal retirements nearby. A "Who needs whom"
+  panel ranks the biggest power exporters and importers.
 - **Satellite view.** Switch the map to public-domain USGS imagery and zoom in
   close; the state colors fade as you zoom so the imagery shows through.
 - **Simulator.** Campus size, architecture efficiency, and grid service (firm,
