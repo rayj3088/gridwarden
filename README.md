@@ -17,10 +17,10 @@ Open it by double-clicking, or drop it on GitHub Pages and it is live.
   sites), Supply (flexible headroom by grid region), Impact (power share, CO2,
   water and cost of one campus in each state), Risk (water, zoning and incentive
   scores per state).
-- **Opportunities and partners.** Each state card shows whether the state makes more
-  power than it uses, neighbors that complement it, the states most like it,
-  wasted clean power on its grid, and coal retirements nearby. A "Who needs whom"
-  panel ranks the biggest power exporters and importers.
+- **Opportunities and connections.** Each state card shows its power flow (what it
+  generates versus what it uses), neighbors with a complementary profile, states with a
+  similar profile, unused clean power on its grid, and the changing power fleet nearby,
+  with links to read more. These are possibilities to explore, not rankings.
 - **Satellite view.** Switch the map to public-domain USGS imagery and zoom in
   close; the state colors fade as you zoom so the imagery shows through.
 - **Simulator.** Campus size, architecture efficiency, and grid service (firm,
@@ -119,3 +119,22 @@ is one file, so Pages serves it as-is.
 
 Free and open source under Apache 2.0. It is a planning tool built on public
 data and a static 2025 study, not engineering or legal advice.
+
+## Keeping the data fresh
+
+State electricity sales, prices and generation live in `data/state_electricity.json`.
+A GitHub Action (`.github/workflows/update-data.yml`) checks the EIA API on the 3rd of
+every month. When EIA has published a newer complete year, it opens a pull request
+with the new file. Nothing goes live until you merge it. If any state's numbers jump
+by more than half, the update stops so a person can look first.
+
+One-time setup:
+
+1. Get a free API key at https://www.eia.gov/opendata/register.php
+2. In this repo on GitHub: Settings > Secrets and variables > Actions > New repository
+   secret. Name it `EIA_API_KEY` and paste the key.
+3. Settings > Actions > General > Workflow permissions: tick "Allow GitHub Actions to
+   create and approve pull requests".
+4. Actions tab > "Update state electricity data" > Run workflow, to test it.
+
+The page falls back to its built-in numbers if the file can't be loaded.

@@ -193,7 +193,7 @@ dialog textarea{width:100%;height:50vh;font:12px/1.45 ui-monospace,Menlo,Consola
       <select id="colorBy" aria-label="Color states by">
         <option value="supply">Color: supply headroom</option>
         <option value="impact">Color: campus impact</option>
-        <option value="trade">Color: power trade</option>
+        <option value="trade">Color: power flow</option>
         <option value="risk">Color: risk</option>
         <option value="none">Color: none</option>
       </select>
@@ -257,7 +257,7 @@ dialog textarea{width:100%;height:50vh;font:12px/1.45 ui-monospace,Menlo,Consola
       <h2>Supply</h2>
       <div class="row"><div class="t"><b>Flexible headroom by grid region</b><small>Duke Nicholas Institute, 2025</small></div><label class="switch"><input type="checkbox" data-layer="supply" aria-label="Headroom"><span></span></label></div>
       <h2>Impact</h2>
-      <div class="row"><div class="t"><b>Opportunities and partners</b><small>Power trade, neighbor partners, wasted clean power, retiring coal. EIA, Modo Energy, Amperon</small></div><label class="switch"><input type="checkbox" data-layer="opps" aria-label="Opportunities and partners"><span></span></label></div>
+      <div class="row"><div class="t"><b>Opportunities and partners</b><small>Power flow, complementary neighbors, unused clean power, changing power fleet. EIA, Modo Energy, Amperon</small></div><label class="switch"><input type="checkbox" data-layer="opps" aria-label="Opportunities and partners"><span></span></label></div>
       <div class="row"><div class="t"><b>Campus impact by state</b><small>Power, carbon, water and cost of one campus. EIA 2024, EPA eGRID2023, Berkeley Lab 2024</small></div><label class="switch"><input type="checkbox" data-layer="impact" aria-label="Campus impact"><span></span></label></div>
       <h2>Risk</h2>
       <p class="hint">Water stress, zoning friction and incentives, scored 0 (easy) to 5 (hard) per state. Import your own scores, or load demo values to see the layer work.</p>
@@ -309,7 +309,7 @@ dialog textarea{width:100%;height:50vh;font:12px/1.45 ui-monospace,Menlo,Consola
     <p class="note" id="regionNote"></p>
     <div class="btns"><button class="btn" type="button" id="csvBtn">Download table (CSV)</button></div>
     <details class="imptab" id="oppTab">
-      <summary>Who needs whom: opportunities</summary>
+      <summary>Opportunities and connections</summary>
       <div class="oppgrid" id="oppGrid"></div>
     </details>
     <details class="imptab" id="impTab">
@@ -325,7 +325,7 @@ dialog textarea{width:100%;height:50vh;font:12px/1.45 ui-monospace,Menlo,Consola
         <li>The efficiency setting is a what-if. The 80% preset is a design target, not a measured result.</li>
         <li>Flexible service is not verified here. Utilities decide what they will count.</li>
         <li>Tracked construction only covers markets with published figures, so real queues are longer.</li>
-        <li>Power trade compares what a state generates with what its customers buy. Part of any gap is normal line losses and plants' own use (about 8% nationally). Partners are suggestions from these numbers, not existing agreements.</li>
+        <li>Power flow compares what a state generates with what its customers buy. Part of any gap is normal line losses and plants' own use (about 8% nationally). Partners are suggestions from these numbers, not existing agreements.</li>
         <li>Impact figures assume the campus runs at full size all year, so they are an upper bound. Cost uses the state's average retail price; very large customers usually pay less. Water uses US averages, not local cooling designs.</li>
         <li>Land, noise, jobs and local taxes are not part of these numbers. Risk scores appear only if you load them, and demo values are random.</li>
       </ul>
@@ -398,7 +398,7 @@ const IMPACT = {AL:[87522,11.90,711.0,142921],AK:[6046,22.17,809.8,6690],AZ:[908
 // Berkeley Lab (2024 report, 2023 data): 17 billion gallons direct (cooling) and 211 billion indirect (power plants) over 176 TWh.
 const WATER_DIRECT = 17e9 / 176e9, WATER_INDIRECT = 211e9 / 176e9; // gallons per kWh
 // US generation / retail sales (EIA 2024). A state above this ratio makes more than it uses.
-const US_GEN_TO_SALES = 4308634 / 3975382;
+let US_GEN_TO_SALES = 4308634 / 3975382;
 // Neighbouring states (shared land border; DC with MD and VA). Made symmetric below.
 const ADJ = (() => {
   const raw = { AL: 'FL GA MS TN', AZ: 'CA CO NM NV UT', AR: 'LA MO MS OK TN TX', CA: 'AZ NV OR', CO: 'AZ KS NE NM OK UT WY', CT: 'MA NY RI',
@@ -703,7 +703,7 @@ function renderLegend() {
     else if (FLEX[S.sim.flex].scale == null) L.push(sw('var(--queue)', 1, 'Firm service: waits in the interconnection queue'));
     else L.push(sw('var(--green)', .3, 'Less headroom'), sw('var(--green)', .8, 'More headroom (per region)'));
   } else if (S.colorBy === 'trade') {
-    L.push(sw('var(--cyan)', .8, 'Makes more power than it uses'), sw('var(--land)', 1, 'Roughly balanced'), sw('var(--violet)', .8, 'Uses more than it makes'));
+    L.push(sw('var(--cyan)', .8, 'Generates more than it uses'), sw('var(--land)', 1, 'Roughly even'), sw('var(--violet)', .8, 'Uses more than it generates'));
   } else if (S.colorBy === 'impact') {
     L.push(sw('var(--amber)', .2, 'One campus: about 1% of state power'), sw('var(--amber)', .95, 'Half or more of state power'));
   } else if (S.colorBy === 'risk') {
@@ -786,24 +786,25 @@ function impactText(st, name) {
 const twh = g => (g / 1000).toFixed(g >= 10000 ? 0 : 1) + ' TWh';
 function tradeLine(st) {
   const d = IMPACT[st], t = tradeOf(st), name = STATES[st][0];
-  const base = `${esc(name)} generates about ${twh(d[3])} a year and its customers buy about ${twh(d[0])}.`;
-  if (t.kind === 'exporter') return base + ` It makes about <b>${t.raw.toFixed(1)}×</b> what it uses, so it sends power to its neighbors.`;
-  if (t.kind === 'importer') return base + ` It makes only about <b>${Math.round(t.raw * 100)}%</b> of what it uses, so it leans on its neighbors.`;
-  return base + ' It is roughly balanced.';
+  const base = `<b>Power flow:</b> ${esc(name)} generates about ${twh(d[3])} a year and uses about ${twh(d[0])}.`;
+  if (t.kind === 'exporter') return base + ` It generates about <b>${t.raw.toFixed(1)}×</b> what it uses and supplies the rest to the wider grid.`;
+  if (t.kind === 'importer') return base + ` It generates about <b>${Math.round(t.raw * 100)}%</b> of what it uses and draws the rest from the wider grid.`;
+  return base + ' Generation and use are roughly even.';
 }
 function oppsText(st) {
   if (!IMPACT[st]) return '';
   const sc = scenario(), name = STATES[st][0], t = tradeOf(st), parts = ['<p>' + tradeLine(st) + '</p>'];
   const ps = partnersOf(st);
-  if (ps.length) parts.push(`<p><b>${t.kind === 'importer' ? 'Neighbors with power to spare' : 'Neighbors that need power'}:</b></p><ul>` +
-    ps.map(x => `<li>${esc(STATES[x.st][0])}: ${x.t.kind === 'exporter' ? `makes ${x.t.raw.toFixed(1)}× what it uses` : `makes ${Math.round(x.t.raw * 100)}% of what it uses`}${stateRegion(x.st) === stateRegion(st) && stateRegion(st) !== 'OTHER' ? ', same grid region' : ''}</li>`).join('') + '</ul>');
+  if (ps.length) parts.push(`<p><b>Neighbors with a complementary power profile:</b></p><ul>` +
+    ps.map(x => `<li>${esc(STATES[x.st][0])}: ${x.t.kind === 'exporter' ? `generates ${x.t.raw.toFixed(1)}× what it uses` : `generates ${Math.round(x.t.raw * 100)}% of what it uses`}${stateRegion(x.st) === stateRegion(st) && stateRegion(st) !== 'OTHER' ? ', same grid region' : ''}</li>`).join('') + '</ul>');
   const sim = similarTo(st);
-  if (sim.length) parts.push(`<p><b>States most like ${esc(name)}</b> (price, grid carbon, power trade): ${sim.map(x => `${esc(STATES[x.st][0])} (${IMPACT[x.st][1].toFixed(1)}¢, ${Math.round(IMPACT[x.st][2])} lb CO₂/MWh)`).join(', ')}. ${esc(name)}: ${IMPACT[st][1].toFixed(1)}¢, ${Math.round(IMPACT[st][2])} lb.</p>`);
+  if (sim.length) parts.push(`<p><b>States with a similar profile</b> (power price, grid carbon, power flow): ${sim.map(x => `${esc(STATES[x.st][0])} (${IMPACT[x.st][1].toFixed(1)}¢, ${Math.round(IMPACT[x.st][2])} lb CO₂/MWh)`).join(', ')}. ${esc(name)}: ${IMPACT[st][1].toFixed(1)}¢, ${Math.round(IMPACT[st][2])} lb.</p>`);
   const sd = strandedFor(st);
-  if (sd) { const camp = sd.twh ? ` That is about what ${Math.max(1, Math.round(sd.twh * 1000 / (sc.mw * 8.76)))} campuses of ${fmtMW(sc.mw)} use in a year, but only a campus that can run when the surplus happens could use it.` : '';
-    parts.push(`<p><b>Wasted clean power:</b> ${sd.text} (${sd.src}).${camp}</p>`); }
-  if (COAL_REGION.has(st)) parts.push('<p><b>Retiring coal:</b> the Midwest and Mid-Atlantic hold about 58% of the 27 GW of coal capacity scheduled to retire by the end of 2028 (EIA). Retiring plant sites can come with grid connections and trained workers.</p>');
-  return '<div class="opps">' + parts.join('') + '</div>';
+  if (sd) { const camp = sd.twh ? ` That is about what ${Math.max(1, Math.round(sd.twh * 1000 / (sc.mw * 8.76)))} campuses of ${fmtMW(sc.mw)} use in a year, though only loads that can run when the surplus happens could put it to use.` : '';
+    parts.push(`<p><b>Unused clean power:</b> ${sd.text} (${sd.src}). Curtailed means turned down because the grid could not use it at that moment.${camp}</p>`); }
+  if (COAL_REGION.has(st)) parts.push('<p><b>Changing power fleet:</b> the Midwest and Mid-Atlantic hold about 58% of the 27 GW of coal capacity scheduled to retire by the end of 2028 (EIA). Communities around retiring plants are weighing what comes next.</p>');
+  parts.push(`<p class="note">Possibilities to explore, not recommendations. Figures are rounded state totals. <a href="https://www.eia.gov/state/?sid=${st}" target="_blank" rel="noopener">Learn more about ${esc(name)}'s energy (EIA)</a></p>`);
+  return '<div class="opps"><p><b>Opportunities and connections</b></p>' + parts.join('') + '</div>';
 }
 function plainState(st) {
   const name = STATES[st][0], reg = regionById(stateRegion(st)), sc = scenario();
@@ -896,11 +897,12 @@ function renderOpps() {
   const im = all.filter(x => x.t.kind === 'importer').sort((a, b) => a.t.surplus - b.t.surplus).slice(0, 6);
   const campY = t => Math.round(t * 1000 / (sc.mw * 8.76));
   $('oppGrid').innerHTML =
-    `<div><h3>Biggest power exporters</h3><ol>${ex.map(x => li(x, y => `about ${twh(y.t.surplus)} a year beyond its own use`)).join('')}</ol></div>` +
-    `<div><h3>Biggest power importers</h3><ol>${im.map(x => li(x, y => `about ${twh(-y.t.surplus)} a year more than it makes`)).join('')}</ol></div>` +
-    `<div><h3>Wasted clean power</h3><p>About ${STRANDED_US_TWH} TWh of US wind and solar was curtailed in 2024 (Amperon), roughly what ${campY(STRANDED_US_TWH)} campuses of ${fmtMW(sc.mw)} use in a year. Texas: more than 8 TWh. California: 3.4 TWh. A campus that can run when the surplus happens turns waste into work.</p></div>` +
-    `<div><h3>Retiring coal</h3><p>US coal capacity is scheduled to fall from 172 GW to 145 GW by the end of 2028, with about 58% of the retirements in the Midwest and Mid-Atlantic (EIA). Old plant sites can come with grid connections and a skilled workforce looking for what comes next.</p></div>` +
-    `<div><h3>Heat as a resource</h3><p>Nearly all the power a data center uses ends up as low-grade heat. In cold states that heat can warm greenhouses or buildings instead of being vented. This is an idea to watch, not a measured figure: there is no good national data on it yet.</p></div>`;
+    `<div><h3>Largest net suppliers to the grid</h3><ol>${ex.map(x => li(x, y => `about ${twh(y.t.surplus)} a year beyond its own use`)).join('')}</ol></div>` +
+    `<div><h3>Largest net users of grid power</h3><ol>${im.map(x => li(x, y => `about ${twh(-y.t.surplus)} a year beyond what it generates`)).join('')}</ol></div>` +
+    `<div><h3>Unused clean power</h3><p>About ${STRANDED_US_TWH} TWh of US wind and solar was curtailed in 2024 (Amperon), roughly what ${campY(STRANDED_US_TWH)} campuses of ${fmtMW(sc.mw)} use in a year. Texas: more than 8 TWh. California: 3.4 TWh. Loads that can run when there is a surplus could put some of it to use. <a href="https://www.eia.gov/todayinenergy/detail.php?id=65364" target="_blank" rel="noopener">Read more (EIA)</a></p></div>` +
+    `<div><h3>Changing power fleet</h3><p>US coal capacity is scheduled to fall from 172 GW to 145 GW by the end of 2028, with about 58% of the retirements in the Midwest and Mid-Atlantic (EIA). Communities around retiring plants are weighing new uses for the land, grid connections and skills. <a href="https://www.eia.gov/todayinenergy/detail.php?id=65744" target="_blank" rel="noopener">Read more (EIA)</a></p></div>` +
+    `<div><h3>Heat as a resource</h3><p>Nearly all the power a data center uses ends up as low-grade heat. In cold states that heat can warm greenhouses or buildings instead of being vented. This is an idea to watch, not a measured figure: there is no good national data on it yet.</p></div>` +
+    `<div><h3>How to read this</h3><p>These are starting points for conversation between states, utilities and communities, based on public state totals. Every state has a different mix of needs and strengths, and none of this ranks one above another.</p></div>`;
 }
 function renderImpact() {
   const box = $('impTab'); box.hidden = !S.layers.impact; if (!S.layers.impact) return;
@@ -1225,6 +1227,19 @@ initGeo();
 selectTab(S.tab || 'simulate');
 renderAll();
 if (FROM_LINK && FROM_LINK.st) showState(FROM_LINK.st);
+// Newer state electricity data, refreshed monthly by .github/workflows/update-data.yml.
+// If the file is missing or looks wrong, the built-in 2024 numbers stay in use.
+fetch('data/state_electricity.json', { cache: 'no-cache' }).then(r => r.ok ? r.json() : null).then(d => {
+  if (!d || !d.states || !d.year) return;
+  const keys = Object.keys(IMPACT);
+  if (!keys.every(st => { const v = d.states[st]; return v && v.sales_gwh > 0 && v.generation_gwh > 0 && v.price_cents_kwh > 0; })) return;
+  keys.forEach(st => { const v = d.states[st]; IMPACT[st][0] = v.sales_gwh; IMPACT[st][1] = v.price_cents_kwh; IMPACT[st][3] = v.generation_gwh; });
+  const tot = k => keys.reduce((a, st) => a + d.states[st][k], 0);
+  US_GEN_TO_SALES = tot('generation_gwh') / tot('sales_gwh');
+  const src = SOURCES.find(x => x.id === 'eia_state'); if (src) src.asOf = String(d.year);
+  renderAll();
+  if (RT.sel && document.getElementById('info').classList.contains('show')) showState(RT.sel);
+}).catch(() => { /* offline or opened as a local file: keep built-in data */ });
 SOURCES.filter(s => s.mode === 'browser' && srcOn(s.id)).forEach(s => runLoader(s.id));
 window.GridZilla = { state: () => S, scenario, rankSites, sourcesYaml, reportText, shareUrl, citationText, regionsCsv, impactOf, tradeOf, partnersOf, similarTo, SOURCES, REGIONS, MARKETS };
 })();
