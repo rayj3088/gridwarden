@@ -2,7 +2,7 @@ name: Update state electricity data
 
 on:
   schedule:
-    - cron: "17 13 3 * *"   # 3rd of each month
+    - cron: "17 13 3 * *"   # 3rd of each month (EIA updates its bulk file monthly)
   workflow_dispatch:
 
 permissions:
@@ -17,10 +17,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Pull latest EIA data
+      - name: Pull latest EIA data (free bulk file, no key)
         id: pull
-        env:
-          EIA_API_KEY: ${{ secrets.EIA_API_KEY }}
         run: |
           set +e
           python scripts/update_data.py
@@ -41,5 +39,5 @@ jobs:
           git commit -m "Update state electricity data"
           git push -u origin "$branch"
           gh pr create --title "Update state electricity data" \
-            --body "Automatic refresh from the EIA API. Checks passed (all 51 areas present, no value changed by more than 50%). Review the diff, then merge to publish." \
+            --body "Automatic refresh from EIA's monthly state data (last 12 months). Checks passed (all 51 areas present, no value changed by more than 50%). Review the diff, then merge to publish." \
             --base main --head "$branch"

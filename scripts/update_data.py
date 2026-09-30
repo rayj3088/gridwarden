@@ -1,86 +1,117 @@
 """
-Refresh data/state_electricity.json from the EIA API (v2).
+Refresh data/state_electricity.json from EIA's free bulk download (no key needed).
 
-Pulls, for every state and DC, the most recent year that EIA has published
-in full: retail sales (GWh), average retail price (cents/kWh) and net
-generation (GWh). Standard library only.
+Uses monthly state data to build a trailing 12-month picture for every state
+and DC: retail sales (GWh), average retail price (cents/kWh, weighted by
+sales) and net generation (GWh). Standard library only.
 
-Run:  EIA_API_KEY=... python scripts/update_data.py
+Source: https://www.eia.gov/opendata/bulk/ELEC.zip (series ELEC.SALES.<ST>-ALL.M,
+ELEC.PRICE.<ST>-ALL.M, ELEC.GEN.ALL-<ST>-99.M).
+
+Run:  python scripts/update_data.py
 Exit codes: 0 = file updated, 3 = nothing new, 1 = error or failed checks.
 """
-import json, os, sys, urllib.parse, urllib.request
+import io, json, os, sys, tempfile, urllib.request, zipfile
 from datetime import date
 
-BASE = os.environ.get("EIA_BASE", "https://api.eia.gov/v2")
-KEY = os.environ.get("EIA_API_KEY", "")
+URL = os.environ.get("EIA_BULK_URL", "https://www.eia.gov/opendata/bulk/ELEC.zip")
 OUT = os.path.join(os.path.dirname(__file__), "..", "data", "state_electricity.json")
 STATES = ("AL AK AZ AR CA CO CT DE DC FL GA HI ID IL IN IA KS KY LA ME MD MA MI MN MS MO MT NE NV NH "
           "NJ NM NY NC ND OH OK OR PA RI SC SD TN TX UT VT VA WA WV WI WY").split()
+MONTHS = "January February March April May June July August September October November December".split()
 
 
-def get(route, params):
-    q = [("api_key", KEY), ("frequency", "annual"), ("length", "5000"),
-         ("sort[0][column]", "period"), ("sort[0][direction]", "desc")] + params
-    url = f"{BASE}/{route}/data/?" + urllib.parse.urlencode(q)
-    with urllib.request.urlopen(url, timeout=60) as r:
-        body = json.load(r)
-    rows = (body.get("response") or {}).get("data")
-    if not isinstance(rows, list):
-        raise RuntimeError(f"{route}: unexpected response")
-    return rows
+def wanted():
+    w = {}
+    for st in STATES:
+        w[f"ELEC.SALES.{st}-ALL.M"] = (st, "sales")
+        w[f"ELEC.PRICE.{st}-ALL.M"] = (st, "price")
+        w[f"ELEC.GEN.ALL-{st}-99.M"] = (st, "gen")
+    return w
 
 
-def num(v):
-    try:
-        return float(v)
-    except (TypeError, ValueError):
-        return None
+def load_series():
+    want, found = wanted(), {}
+    with tempfile.TemporaryFile() as tmp:
+        with urllib.request.urlopen(URL, timeout=300) as r:
+            while True:
+                chunk = r.read(1 << 20)
+                if not chunk:
+                    break
+                tmp.write(chunk)
+        tmp.seek(0)
+        with zipfile.ZipFile(tmp) as z:
+            name = next(n for n in z.namelist() if n.lower().endswith(".txt"))
+            with z.open(name) as f:
+                for line in io.TextIOWrapper(f, encoding="utf-8"):
+                    if '"series_id"' not in line:
+                        continue
+                    sid_at = line.find('"series_id"')
+                    sid = line[sid_at:sid_at + 80].split('"')[3]
+                    if sid not in want:
+                        continue
+                    rec = json.loads(line)
+                    vals = {}
+                    for period, v in rec.get("data") or []:
+                        try:
+                            vals[str(period)] = float(v)
+                        except (TypeError, ValueError):
+                            pass
+                    found[want[sid]] = vals
+    return found
 
 
-def by_year(rows, state_key, fields):
-    out = {}
-    for r in rows:
-        st, yr = r.get(state_key), str(r.get("period", ""))[:4]
-        if st not in STATES or not yr.isdigit():
-            continue
-        vals = {f: num(r.get(f)) for f in fields}
-        if any(v is None for v in vals.values()):
-            continue
-        out.setdefault(int(yr), {})[st] = vals
+def month_list(end, n=12):
+    y, m = int(end[:4]), int(end[4:])
+    out = []
+    for _ in range(n):
+        out.append(f"{y:04d}{m:02d}")
+        m -= 1
+        if m == 0:
+            y, m = y - 1, 12
     return out
 
 
 def main():
-    if not KEY:
-        print("EIA_API_KEY is not set.")
+    try:
+        s = load_series()
+    except Exception as e:  # network, zip or format problem
+        print(f"Could not read the EIA bulk file: {e}")
         return 1
-    start = str(date.today().year - 4)
-    sales = by_year(get("electricity/retail-sales",
-                        [("data[0]", "sales"), ("data[1]", "price"), ("facets[sectorid][]", "ALL"), ("start", start)]),
-                    "stateid", ["sales", "price"])
-    gen = by_year(get("electricity/electric-power-operational-data",
-                      [("data[0]", "generation"), ("facets[sectorid][]", "99"), ("facets[fueltypeid][]", "ALL"), ("start", start)]),
-                  "location", ["generation"])
-    years = [y for y in sorted(set(sales) & set(gen), reverse=True)
-             if len(sales[y]) == len(STATES) and len(gen[y]) == len(STATES)]
-    if not years:
-        print("No year has complete data for all 51 areas yet.")
+    missing = [f"{st} {k}" for st in STATES for k in ("sales", "price", "gen") if (st, k) not in s]
+    if missing:
+        print(f"Series missing from the bulk file ({len(missing)}), e.g. {missing[:5]}. EIA may have renamed them.")
+        return 1
+
+    # Latest month for which all 51 areas have 12 full months of all three series.
+    candidates = sorted(set(s[("VA", "sales")]), reverse=True)
+    end = None
+    for cand in candidates[:24]:
+        ms = month_list(cand)
+        if all(m in s[(st, k)] for st in STATES for k in ("sales", "price", "gen") for m in ms):
+            end = cand
+            break
+    if not end:
+        print("No recent 12-month window has complete data for all 51 areas.")
         return 3
-    year = years[0]
+    ms = month_list(end)
 
-    states = {st: {"sales_gwh": round(sales[year][st]["sales"], 1),      # million kWh = GWh
-                   "price_cents_kwh": round(sales[year][st]["price"], 2),
-                   "generation_gwh": round(gen[year][st]["generation"], 1)}  # thousand MWh = GWh
-              for st in STATES}
+    states = {}
+    for st in STATES:
+        sales = sum(s[(st, "sales")][m] for m in ms)                       # million kWh = GWh
+        price = sum(s[(st, "price")][m] * s[(st, "sales")][m] for m in ms) / sales
+        gen = sum(s[(st, "gen")][m] for m in ms)                             # thousand MWh = GWh
+        states[st] = {"sales_gwh": round(sales, 1), "price_cents_kwh": round(price, 2), "generation_gwh": round(gen, 1)}
 
-    # Sanity checks against the current file. Big jumps stop the update so a person looks first.
+    start = ms[-1]
+    label = f"12 months through {MONTHS[int(end[4:]) - 1]} {end[:4]}"
     problems = []
     try:
         old = json.load(open(OUT))
     except (OSError, ValueError):
-        old = {"year": 0, "states": {}}
-    if year < old.get("year", 0):
-        print(f"API's latest complete year ({year}) is older than the file ({old['year']}). Leaving it.")
+        old = {"states": {}}
+    if old.get("period_end", "") >= end:
+        print(f"Already current ({old.get('period_label')}).")
         return 3
     for st, v in states.items():
         if not (0 < v["price_cents_kwh"] < 100):
@@ -99,16 +130,14 @@ def main():
         print("Checks failed; not writing:\n  " + "\n  ".join(problems))
         return 1
 
-    new = {"schema_version": 1, "year": year, "updated_on": date.today().isoformat(),
-           "source": f"U.S. Energy Information Administration, EIA API v2 ({year} data)",
-           "source_url": "https://www.eia.gov/electricity/state/", "states": dict(sorted(states.items()))}
-    if old.get("year") == year and old.get("states") == new["states"]:
-        print(f"No change ({year} data already in the file).")
-        return 3
+    new = {"schema_version": 2, "year": int(end[:4]), "period_start": start, "period_end": end, "period_label": label,
+           "updated_on": date.today().isoformat(),
+           "source": f"U.S. Energy Information Administration, monthly state data ({label})",
+           "source_url": "https://www.eia.gov/electricity/data/browser/", "states": dict(sorted(states.items()))}
     with open(OUT, "w") as f:
         json.dump(new, f, indent=1)
         f.write("\n")
-    print(f"Updated to {year} data. US retail sales {total:,.0f} GWh.")
+    print(f"Updated to {label}. US retail sales {total:,.0f} GWh.")
     return 0
 
 

@@ -1236,7 +1236,7 @@ fetch('data/state_electricity.json', { cache: 'no-cache' }).then(r => r.ok ? r.j
   keys.forEach(st => { const v = d.states[st]; IMPACT[st][0] = v.sales_gwh; IMPACT[st][1] = v.price_cents_kwh; IMPACT[st][3] = v.generation_gwh; });
   const tot = k => keys.reduce((a, st) => a + d.states[st][k], 0);
   US_GEN_TO_SALES = tot('generation_gwh') / tot('sales_gwh');
-  const src = SOURCES.find(x => x.id === 'eia_state'); if (src) src.asOf = String(d.year);
+  const src = SOURCES.find(x => x.id === 'eia_state'); if (src) src.asOf = d.period_label || String(d.year);
   renderAll();
   if (RT.sel && document.getElementById('info').classList.contains('show')) showState(RT.sel);
 }).catch(() => { /* offline or opened as a local file: keep built-in data */ });

@@ -123,18 +123,14 @@ data and a static 2025 study, not engineering or legal advice.
 ## Keeping the data fresh
 
 State electricity sales, prices and generation live in `data/state_electricity.json`.
-A GitHub Action (`.github/workflows/update-data.yml`) checks the EIA API on the 3rd of
-every month. When EIA has published a newer complete year, it opens a pull request
-with the new file. Nothing goes live until you merge it. If any state's numbers jump
-by more than half, the update stops so a person can look first.
+A GitHub Action (`.github/workflows/update-data.yml`) reads EIA's free monthly bulk
+download on the 3rd of every month (no sign-up or key) and builds a last-12-months
+picture for every state. When newer months are out, it opens a pull request with the
+new file. Nothing goes live until you merge it. If any state's numbers jump by more
+than half, the update stops so a person can look first.
 
-One-time setup:
-
-1. Get a free API key at https://www.eia.gov/opendata/register.php
-2. In this repo on GitHub: Settings > Secrets and variables > Actions > New repository
-   secret. Name it `EIA_API_KEY` and paste the key.
-3. Settings > Actions > General > Workflow permissions: tick "Allow GitHub Actions to
-   create and approve pull requests".
-4. Actions tab > "Update state electricity data" > Run workflow, to test it.
+One-time setup: in this repo on GitHub, Settings > Actions > General > Workflow
+permissions, tick "Allow GitHub Actions to create and approve pull requests". To test,
+open the Actions tab > "Update state electricity data" > Run workflow.
 
 The page falls back to its built-in numbers if the file can't be loaded.

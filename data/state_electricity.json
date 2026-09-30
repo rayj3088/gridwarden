@@ -1,264 +1,267 @@
 {
- "schema_version": 1,
- "year": 2024,
+ "schema_version": 2,
+ "year": 2026,
+ "period_start": "202508",
+ "period_end": "202607",
+ "period_label": "12 months through July 2026",
  "updated_on": "2026-09-30",
- "source": "U.S. Energy Information Administration, State Electricity Profiles (2024 data)",
- "source_url": "https://www.eia.gov/electricity/state/",
+ "source": "U.S. Energy Information Administration, monthly state data (12 months through July 2026)",
+ "source_url": "https://www.eia.gov/electricity/data/browser/",
  "states": {
   "AK": {
-   "sales_gwh": 6046.5,
-   "price_cents_kwh": 22.17,
-   "generation_gwh": 6690.5
+   "sales_gwh": 6300.9,
+   "price_cents_kwh": 24.02,
+   "generation_gwh": 6776.0
   },
   "AL": {
-   "sales_gwh": 87522.9,
-   "price_cents_kwh": 11.9,
-   "generation_gwh": 142921.2
+   "sales_gwh": 89519.9,
+   "price_cents_kwh": 12.78,
+   "generation_gwh": 143117.0
   },
   "AR": {
-   "sales_gwh": 49895.8,
-   "price_cents_kwh": 9.59,
-   "generation_gwh": 61542.5
+   "sales_gwh": 53544.3,
+   "price_cents_kwh": 10.14,
+   "generation_gwh": 67572.9
   },
   "AZ": {
-   "sales_gwh": 90843.3,
-   "price_cents_kwh": 12.74,
-   "generation_gwh": 116026.5
+   "sales_gwh": 96370.6,
+   "price_cents_kwh": 12.84,
+   "generation_gwh": 118289.0
   },
   "CA": {
-   "sales_gwh": 245717.1,
-   "price_cents_kwh": 27.04,
-   "generation_gwh": 214191.4
+   "sales_gwh": 239239.4,
+   "price_cents_kwh": 28.11,
+   "generation_gwh": 198667.8
   },
   "CO": {
-   "sales_gwh": 56842.9,
-   "price_cents_kwh": 12.07,
-   "generation_gwh": 58798.4
+   "sales_gwh": 57161.9,
+   "price_cents_kwh": 13.37,
+   "generation_gwh": 55260.3
   },
   "CT": {
-   "sales_gwh": 27351.4,
-   "price_cents_kwh": 24.37,
-   "generation_gwh": 44761.4
+   "sales_gwh": 27637.4,
+   "price_cents_kwh": 24.58,
+   "generation_gwh": 45441.0
   },
   "DC": {
-   "sales_gwh": 10142.9,
-   "price_cents_kwh": 16.88,
-   "generation_gwh": 187.2
+   "sales_gwh": 10091.7,
+   "price_cents_kwh": 22.56,
+   "generation_gwh": 196.0
   },
   "DE": {
-   "sales_gwh": 11373.9,
-   "price_cents_kwh": 13.56,
-   "generation_gwh": 4799.2
+   "sales_gwh": 11554.6,
+   "price_cents_kwh": 14.99,
+   "generation_gwh": 5202.7
   },
   "FL": {
-   "sales_gwh": 255095.5,
-   "price_cents_kwh": 12.53,
-   "generation_gwh": 266119.2
+   "sales_gwh": 259982.4,
+   "price_cents_kwh": 13.53,
+   "generation_gwh": 271162.7
   },
   "GA": {
-   "sales_gwh": 150004.0,
-   "price_cents_kwh": 11.4,
-   "generation_gwh": 139805.4
+   "sales_gwh": 154740.7,
+   "price_cents_kwh": 12.15,
+   "generation_gwh": 147597.4
   },
   "HI": {
-   "sales_gwh": 8952.1,
-   "price_cents_kwh": 38.0,
-   "generation_gwh": 9161.0
+   "sales_gwh": 9136.0,
+   "price_cents_kwh": 38.9,
+   "generation_gwh": 9477.4
   },
   "IA": {
-   "sales_gwh": 54930.4,
-   "price_cents_kwh": 9.34,
-   "generation_gwh": 70464.1
+   "sales_gwh": 59917.3,
+   "price_cents_kwh": 9.97,
+   "generation_gwh": 75229.6
   },
   "ID": {
-   "sales_gwh": 26369.6,
-   "price_cents_kwh": 9.51,
-   "generation_gwh": 20035.4
+   "sales_gwh": 26743.9,
+   "price_cents_kwh": 10.1,
+   "generation_gwh": 22456.3
   },
   "IL": {
-   "sales_gwh": 133226.9,
-   "price_cents_kwh": 12.21,
-   "generation_gwh": 185012.9
+   "sales_gwh": 134280.9,
+   "price_cents_kwh": 14.36,
+   "generation_gwh": 194437.5
   },
   "IN": {
-   "sales_gwh": 99219.6,
-   "price_cents_kwh": 11.38,
-   "generation_gwh": 97012.9
+   "sales_gwh": 105543.1,
+   "price_cents_kwh": 12.9,
+   "generation_gwh": 110666.6
   },
   "KS": {
-   "sales_gwh": 41258.2,
-   "price_cents_kwh": 11.21,
-   "generation_gwh": 57696.2
+   "sales_gwh": 42426.8,
+   "price_cents_kwh": 11.85,
+   "generation_gwh": 63363.8
   },
   "KY": {
-   "sales_gwh": 74405.9,
-   "price_cents_kwh": 10.07,
-   "generation_gwh": 66950.8
+   "sales_gwh": 75459.6,
+   "price_cents_kwh": 11.03,
+   "generation_gwh": 71937.4
   },
   "LA": {
-   "sales_gwh": 95356.8,
-   "price_cents_kwh": 8.8,
-   "generation_gwh": 99622.8
+   "sales_gwh": 98551.1,
+   "price_cents_kwh": 9.72,
+   "generation_gwh": 107334.2
   },
   "MA": {
-   "sales_gwh": 49418.6,
-   "price_cents_kwh": 23.94,
-   "generation_gwh": 20914.9
+   "sales_gwh": 52057.9,
+   "price_cents_kwh": 26.03,
+   "generation_gwh": 21249.0
   },
   "MD": {
-   "sales_gwh": 59018.7,
-   "price_cents_kwh": 15.04,
-   "generation_gwh": 35424.8
+   "sales_gwh": 59418.3,
+   "price_cents_kwh": 18.48,
+   "generation_gwh": 38931.6
   },
   "ME": {
-   "sales_gwh": 11341.6,
-   "price_cents_kwh": 19.66,
-   "generation_gwh": 14655.2
+   "sales_gwh": 11085.7,
+   "price_cents_kwh": 23.96,
+   "generation_gwh": 15215.8
   },
   "MI": {
-   "sales_gwh": 98991.0,
-   "price_cents_kwh": 14.16,
-   "generation_gwh": 124200.1
+   "sales_gwh": 100165.0,
+   "price_cents_kwh": 15.46,
+   "generation_gwh": 124634.9
   },
   "MN": {
-   "sales_gwh": 64562.1,
-   "price_cents_kwh": 12.35,
-   "generation_gwh": 58595.2
+   "sales_gwh": 66501.7,
+   "price_cents_kwh": 12.93,
+   "generation_gwh": 60348.8
   },
   "MO": {
-   "sales_gwh": 77776.0,
-   "price_cents_kwh": 11.06,
-   "generation_gwh": 66875.7
+   "sales_gwh": 80463.9,
+   "price_cents_kwh": 11.9,
+   "generation_gwh": 72914.2
   },
   "MS": {
-   "sales_gwh": 48684.6,
-   "price_cents_kwh": 10.93,
-   "generation_gwh": 77336.7
+   "sales_gwh": 50173.0,
+   "price_cents_kwh": 12.02,
+   "generation_gwh": 77215.6
   },
   "MT": {
-   "sales_gwh": 15567.0,
-   "price_cents_kwh": 10.83,
-   "generation_gwh": 26872.9
+   "sales_gwh": 15188.5,
+   "price_cents_kwh": 11.41,
+   "generation_gwh": 29046.2
   },
   "NC": {
-   "sales_gwh": 136904.5,
-   "price_cents_kwh": 11.65,
-   "generation_gwh": 134965.4
+   "sales_gwh": 140555.2,
+   "price_cents_kwh": 11.98,
+   "generation_gwh": 137010.6
   },
   "ND": {
-   "sales_gwh": 29769.7,
-   "price_cents_kwh": 7.93,
-   "generation_gwh": 42557.2
+   "sales_gwh": 30333.6,
+   "price_cents_kwh": 8.52,
+   "generation_gwh": 44377.8
   },
   "NE": {
-   "sales_gwh": 35191.0,
-   "price_cents_kwh": 9.07,
-   "generation_gwh": 37228.9
+   "sales_gwh": 39529.7,
+   "price_cents_kwh": 9.79,
+   "generation_gwh": 41131.5
   },
   "NH": {
-   "sales_gwh": 10914.0,
-   "price_cents_kwh": 20.61,
-   "generation_gwh": 16942.5
+   "sales_gwh": 11171.0,
+   "price_cents_kwh": 23.07,
+   "generation_gwh": 18590.1
   },
   "NJ": {
-   "sales_gwh": 73531.4,
-   "price_cents_kwh": 16.29,
-   "generation_gwh": 60175.2
+   "sales_gwh": 73487.9,
+   "price_cents_kwh": 19.8,
+   "generation_gwh": 60937.7
   },
   "NM": {
-   "sales_gwh": 30296.4,
-   "price_cents_kwh": 9.18,
-   "generation_gwh": 39697.3
+   "sales_gwh": 32610.9,
+   "price_cents_kwh": 9.21,
+   "generation_gwh": 44753.1
   },
   "NV": {
-   "sales_gwh": 40664.6,
-   "price_cents_kwh": 11.47,
-   "generation_gwh": 45528.4
+   "sales_gwh": 41082.2,
+   "price_cents_kwh": 10.52,
+   "generation_gwh": 45651.0
   },
   "NY": {
-   "sales_gwh": 140497.5,
-   "price_cents_kwh": 19.66,
-   "generation_gwh": 129015.5
+   "sales_gwh": 143034.2,
+   "price_cents_kwh": 23.12,
+   "generation_gwh": 133454.1
   },
   "OH": {
-   "sales_gwh": 153707.4,
-   "price_cents_kwh": 11.29,
-   "generation_gwh": 142746.7
+   "sales_gwh": 166439.0,
+   "price_cents_kwh": 13.76,
+   "generation_gwh": 154524.0
   },
   "OK": {
-   "sales_gwh": 72083.8,
-   "price_cents_kwh": 9.09,
-   "generation_gwh": 94069.1
+   "sales_gwh": 74931.7,
+   "price_cents_kwh": 9.85,
+   "generation_gwh": 93639.2
   },
   "OR": {
-   "sales_gwh": 59680.7,
-   "price_cents_kwh": 11.11,
-   "generation_gwh": 64661.2
+   "sales_gwh": 62259.4,
+   "price_cents_kwh": 11.5,
+   "generation_gwh": 68158.1
   },
   "PA": {
-   "sales_gwh": 142146.5,
-   "price_cents_kwh": 12.51,
-   "generation_gwh": 241498.6
+   "sales_gwh": 143067.0,
+   "price_cents_kwh": 15.33,
+   "generation_gwh": 242986.9
   },
   "RI": {
-   "sales_gwh": 7414.2,
-   "price_cents_kwh": 24.15,
-   "generation_gwh": 9777.0
+   "sales_gwh": 7435.3,
+   "price_cents_kwh": 25.8,
+   "generation_gwh": 9495.0
   },
   "SC": {
-   "sales_gwh": 83961.4,
-   "price_cents_kwh": 10.9,
-   "generation_gwh": 100485.4
+   "sales_gwh": 85997.4,
+   "price_cents_kwh": 11.98,
+   "generation_gwh": 102509.4
   },
   "SD": {
-   "sales_gwh": 13637.2,
-   "price_cents_kwh": 10.87,
-   "generation_gwh": 20872.0
+   "sales_gwh": 13952.7,
+   "price_cents_kwh": 11.91,
+   "generation_gwh": 22400.4
   },
   "TN": {
-   "sales_gwh": 102962.4,
-   "price_cents_kwh": 10.9,
-   "generation_gwh": 76166.8
+   "sales_gwh": 107563.8,
+   "price_cents_kwh": 11.82,
+   "generation_gwh": 81212.9
   },
   "TX": {
-   "sales_gwh": 505431.3,
-   "price_cents_kwh": 9.79,
-   "generation_gwh": 566502.7
+   "sales_gwh": 521119.4,
+   "price_cents_kwh": 10.39,
+   "generation_gwh": 605575.0
   },
   "UT": {
-   "sales_gwh": 34688.1,
-   "price_cents_kwh": 9.97,
-   "generation_gwh": 35133.9
+   "sales_gwh": 35696.9,
+   "price_cents_kwh": 10.93,
+   "generation_gwh": 38170.6
   },
   "VA": {
-   "sales_gwh": 138044.8,
-   "price_cents_kwh": 10.62,
-   "generation_gwh": 102698.6
+   "sales_gwh": 147263.8,
+   "price_cents_kwh": 12.47,
+   "generation_gwh": 104065.7
   },
   "VT": {
-   "sales_gwh": 5458.9,
-   "price_cents_kwh": 18.41,
-   "generation_gwh": 2258.9
+   "sales_gwh": 5473.4,
+   "price_cents_kwh": 20.12,
+   "generation_gwh": 2146.2
   },
   "WA": {
-   "sales_gwh": 89981.6,
-   "price_cents_kwh": 10.13,
-   "generation_gwh": 102397.7
+   "sales_gwh": 90380.7,
+   "price_cents_kwh": 11.76,
+   "generation_gwh": 111744.7
   },
   "WI": {
-   "sales_gwh": 68291.4,
-   "price_cents_kwh": 12.72,
-   "generation_gwh": 65276.3
+   "sales_gwh": 71158.0,
+   "price_cents_kwh": 13.72,
+   "generation_gwh": 65303.0
   },
   "WV": {
-   "sales_gwh": 32990.6,
-   "price_cents_kwh": 11.05,
-   "generation_gwh": 50594.8
+   "sales_gwh": 34025.6,
+   "price_cents_kwh": 11.47,
+   "generation_gwh": 54741.4
   },
   "WY": {
-   "sales_gwh": 17216.9,
-   "price_cents_kwh": 9.14,
-   "generation_gwh": 40709.2
+   "sales_gwh": 17517.1,
+   "price_cents_kwh": 9.91,
+   "generation_gwh": 44398.6
   }
  }
 }
