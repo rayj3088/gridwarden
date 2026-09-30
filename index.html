@@ -61,6 +61,20 @@ a{color:var(--cyan)}
 .info.show{display:block}
 .info h3{margin:0 0 4px;font-size:15px}
 .info .x{position:absolute;top:4px;right:6px;border:0;background:none;cursor:pointer;font-size:18px;line-height:1}
+.info{max-height:calc(100% - 20px);overflow:auto}
+@media (max-width:860px){.info{position:relative;left:auto;bottom:auto;max-width:none;max-height:none;margin:8px 10px 4px}}
+.plain{margin:6px 0 8px;line-height:1.45}
+.plain p{margin:0 0 6px}
+.ask{margin:4px 0 8px;padding-left:18px}
+.ask li{margin:2px 0}
+.info details{margin-top:4px}
+.info summary{cursor:pointer;color:var(--muted);font-size:12px}
+.maphint{margin:0;padding:6px 12px 0;font-size:12px;color:var(--muted)}
+details.limits{margin-top:12px;border-top:1px solid var(--rule);padding-top:10px}
+details.limits summary{cursor:pointer;font-weight:600}
+details.limits ul{margin:8px 0 0;padding-left:18px;font-size:13px}
+details.limits li{margin:4px 0}
+.fresh{font-size:12px;color:var(--muted);margin:8px 0 0}
 
 /* ===== Map marks ===== */
 .state{stroke:var(--surface);stroke-width:.8;cursor:pointer}
@@ -164,6 +178,7 @@ dialog textarea{width:100%;height:50vh;font:12px/1.45 ui-monospace,Menlo,Consola
     <svg id="map" viewBox="0 0 975 610" role="img" aria-label="United States map of grid headroom, data center markets and sites"></svg>
     <div class="info" id="info" role="dialog" aria-live="polite"><button class="x" id="infoClose" aria-label="Close">&times;</button><div id="infoBody"></div></div>
     <div class="legend" id="legend"></div>
+    <p class="maphint" id="mapHint">Tap a state for a plain-language summary. Tap a dot for a data center market.</p>
   </section>
 
   <aside class="panel card">
@@ -200,6 +215,11 @@ dialog textarea{width:100%;height:50vh;font:12px/1.45 ui-monospace,Menlo,Consola
       <div class="btns">
         <button class="btn primary" type="button" id="reportBtn">Copy report</button>
         <button class="btn" type="button" id="printBtn">Print or save PDF</button>
+      </div>
+      <div class="btns">
+        <button class="btn" type="button" id="linkBtn">Copy link to this view</button>
+        <button class="btn" type="button" id="citeBtn">Copy citation</button>
+        <button class="btn" type="button" id="imgBtn">Save map image</button>
       </div>
     </div>
 
@@ -259,6 +279,20 @@ dialog textarea{width:100%;height:50vh;font:12px/1.45 ui-monospace,Menlo,Consola
     <h2>Headroom by grid region</h2>
     <div class="tablewrap"><table id="regionTable"></table></div>
     <p class="note" id="regionNote"></p>
+    <div class="btns"><button class="btn" type="button" id="csvBtn">Download table (CSV)</button></div>
+    <details class="limits" id="limits" open>
+      <summary>What this can't tell you</summary>
+      <ul>
+        <li>Headroom is a regional, first-order estimate from one study. It is not an interconnection study. Only a utility or grid operator can say whether a specific project can connect.</li>
+        <li>State colors use each state's main grid region. Real grid boundaries cut across state lines.</li>
+        <li>"Campuses that fit" is simple arithmetic (headroom divided by campus size), not a forecast of what will be built.</li>
+        <li>The efficiency setting is a what-if. The 80% preset is a design target, not a measured result.</li>
+        <li>Flexible service is not verified here. Utilities decide what they will count.</li>
+        <li>Tracked construction only covers markets with published figures, so real queues are longer.</li>
+        <li>Water, land, noise, jobs and local costs are not part of the headroom numbers. Risk scores appear only if you load them, and demo values are random.</li>
+      </ul>
+      <p class="fresh" id="fresh"></p>
+    </details>
   </section>
 </main>
 
@@ -321,7 +355,7 @@ const MARKETS = [
   { id: 'nyc', name: 'New York Tri-State', st: 'NJ', region: 'OTHER', lon: -74.17, lat: 40.74, inv: null, uc: null, vac: null, asOf: 'CBRE primary market', note: 'Sizes not in this snapshot' }
 ];
 const PRIMARY_TOTALS = 'Across the eight primary markets in H1 2026: about 10.9 GW of capacity, 7,481 MW under construction, 1.4% vacancy (CBRE).';
-const SAMPLE_SITES = 'name,lat,lon,mw,state\nSample site: Abilene TX,32.45,-99.73,1200,TX\nSample site: Richland Parish LA,32.42,-91.76,2000,LA\nSample site: Memphis TN,35.15,-90.05,300,TN\nSample site: Mount Pleasant WI,42.72,-87.88,900,WI\nSample site: New Carlisle IN,41.70,-86.51,600,IN\nSample site: Athens NY,42.26,-73.81,150,NY';
+const SAMPLE_SITES = 'name,lat,lon,mw,state\nSample site: Abilene TX,32.45,-99.73,1200,TX\nSample site: Richland Parish LA,32.42,-91.76,2000,LA\nSample site: Memphis TN,35.15,-90.05,300,TN\nSample site: Mount Pleasant WI,42.72,-87.88,900,WI\nSample site: New Carlisle IN,41.70,-86.51,600,IN\nSample site: Rome NY,43.21,-75.46,150,NY';
 
 /* =====================================================================
    3. SOURCE REGISTRY: one switch per source.
@@ -334,8 +368,8 @@ const SAMPLE_SITES = 'name,lat,lon,mw,state\nSample site: Abilene TX,32.45,-99.7
 const HIFLD_LINES = 'https://services2.arcgis.com/LYMgRMwHfrWWEg3s/arcgis/rest/services/HIFLD_US_Electric_Power_Transmission_Lines/FeatureServer/0/query';
 const HIFLD_SUBS = 'https://services5.arcgis.com/HDRa0B57OVrv2E1q/arcgis/rest/services/Electric_Substations/FeatureServer/0/query';
 const SOURCES = [
-  { id: 'duke_headroom', org: 'Duke Nicholas Institute', dataset: 'Flexible headroom by grid region', layer: 'Supply', mode: 'snapshot', on: true, url: 'https://www.utilitydive.com/news/us-grid-headroom-flexible-load-data-center-ai-ev-duke-report/739767/' },
-  { id: 'cbre_markets', org: 'CBRE Research', dataset: 'Data center markets: inventory and construction', layer: 'Demand', mode: 'snapshot', on: true, url: 'https://www.cbre.com/insights/books/north-america-data-center-trends-h1-2026' },
+  { id: 'duke_headroom', org: 'Duke Nicholas Institute', dataset: 'Flexible headroom by grid region', layer: 'Supply', mode: 'snapshot', asOf: 'Feb 2025', on: true, url: 'https://www.utilitydive.com/news/us-grid-headroom-flexible-load-data-center-ai-ev-duke-report/739767/' },
+  { id: 'cbre_markets', org: 'CBRE Research', dataset: 'Data center markets: inventory and construction', layer: 'Demand', mode: 'snapshot', asOf: 'H1 2026 (Q1 2026 or H2 2025 for some markets)', on: true, url: 'https://www.cbre.com/insights/books/north-america-data-center-trends-h1-2026' },
   { id: 'hifld_lines', org: 'HIFLD via ArcGIS', dataset: 'Transmission lines, 345 kV and up', layer: 'Supply', mode: 'browser', on: false, url: HIFLD_LINES },
   { id: 'hifld_subs', org: 'HIFLD via ArcGIS', dataset: 'Electric substations', layer: 'Supply', mode: 'browser', on: false, url: HIFLD_SUBS },
   { id: 'gridstatus', org: 'GridStatus.io', dataset: 'Real-time ISO load, frequency, nodal prices', layer: 'Supply', mode: 'engine', key: true, url: 'https://www.gridstatus.io' },
@@ -382,7 +416,7 @@ function loadState() {
   return s;
 }
 let S = loadState();
-function save() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(S)); } catch (e) { /* storage can be unavailable */ } }
+function save() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(S)); } catch (e) { /* storage can be unavailable */ } writeHash(); }
 const RT = { lines: null, subs: null, status: {}, geo: null, view: { k: 1, x: 0, y: 0 } };
 
 /* =====================================================================
@@ -625,15 +659,33 @@ window.addEventListener('pointerup', () => { drag = null; });
 const fmtMW = v => v == null ? 'n/a' : (Math.abs(v) >= 1000 ? (v / 1000).toFixed(v >= 10000 ? 0 : 1) + ' GW' : Math.round(v).toLocaleString() + ' MW');
 const fmtGW = v => v == null ? 'n/a' : v.toFixed(1) + ' GW';
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-function showInfo(html) { document.getElementById('infoBody').innerHTML = html; document.getElementById('info').classList.add('show'); }
-document.getElementById('infoClose').addEventListener('click', () => document.getElementById('info').classList.remove('show'));
+function showInfo(html, st) { RT.sel = st || null; writeHash(); document.getElementById('infoBody').innerHTML = html; document.getElementById('info').classList.add('show'); }
+document.getElementById('infoClose').addEventListener('click', () => { document.getElementById('info').classList.remove('show'); RT.sel = null; writeHash(); });
+function plainState(st) {
+  const name = STATES[st][0], reg = regionById(stateRegion(st)), sc = scenario();
+  const row = sc.rows.find(x => x.r.id === (reg && reg.id));
+  const f = FLEX[S.sim.flex];
+  const parts = [];
+  if (!sc.haveSupply) parts.push('The supply source is switched off, so there is no headroom estimate.');
+  else if (f.scale == null) parts.push(`On firm service, a new large campus in ${name} would likely wait in the interconnection line. Some utilities report waits of 7 to 10 years. Choose a flexible option to see what opens up.`);
+  else if (row && row.rem != null && reg.id === 'OTHER') parts.push(`${name} sits in one of 17 smaller grid regions that are combined here. Together they have about <b>${row.rem.toFixed(1)} GW</b> of spare capacity if big customers agree to ${esc(f.long)}, so that number says little about ${name} on its own.`);
+  else if (row && row.rem != null) parts.push(`${name} is mostly served by <b>${esc(reg.name.replace(/\.$/, ''))}</b>. That region has about <b>${row.rem.toFixed(1)} GW</b> of spare capacity if big customers agree to ${esc(f.long)}. That is roughly enough for <b>${row.std}</b> standard ${fmtMW(sc.mw)} campuses across the whole region, or <b>${row.yours}</b> if each used ${sc.eff}% less grid power.`);
+  const ms = allMarkets().filter(m => m.st === st);
+  if (ms.length) { const uc = ms.reduce((a, m) => a + (m.uc || 0), 0); parts.push(`Tracked data center markets here: ${ms.map(m => esc(m.name)).join(', ')}${uc ? `, with about ${fmtMW(uc)} under construction (CBRE)` : ''}.`); }
+  const r = riskScore(st);
+  if (r != null) parts.push(`Your risk score for ${name} is ${r.toFixed(1)} out of 5 (0 is easy, 5 is hard)${S.riskDemo ? ', but these are demo values, not real data' : ''}.`);
+  parts.push('This is a regional estimate, not a study of any one location. Only the local utility can say whether a specific project can connect.');
+  return '<div class="plain">' + parts.map(p => `<p>${p}</p>`).join('') + '</div>';
+}
 function showState(st) {
   const reg = regionById(stateRegion(st)); const row = scenario().rows.find(x => x.r.id === (reg && reg.id));
   const risk = S.risk[st];
-  showInfo(`<h3>${esc(STATES[st][0])}</h3>Main grid region: <b>${esc(reg ? reg.name : 'n/a')}</b> (approximate)<br>` +
+  showInfo(`<h3>${esc(STATES[st][0])}: what this means</h3>` + plainState(st) +
+    `<b>Questions worth asking locally</b><ul class="ask"><li>How much power will the project need, and by when?</li><li>Who pays for new lines and upgrades?</li><li>How much water will it use, and where will it come from?</li><li>Will it cut back at peak times?</li></ul>` +
+    `<details><summary>Numbers behind this</summary>Main grid region: <b>${esc(reg ? reg.name : 'n/a')}</b> (approximate)<br>` +
     `Headroom left in region: <b>${row && row.rem != null ? fmtGW(row.rem) : 'firm service or source off'}</b><br>` +
     `Campuses that fit there: ${row && row.std != null ? `<b>${row.std}</b> standard, <b>${row.yours}</b> your way` : 'n/a'}<br>` +
-    `Risk: ${risk ? `water ${risk.water ?? 'n/a'}, zoning ${risk.zoning ?? 'n/a'}, incentives ${risk.incentives ?? 'n/a'}${S.riskDemo ? ' (demo)' : ''}` : 'no score loaded'}`);
+    `Risk: ${risk ? `water ${risk.water ?? 'n/a'}, zoning ${risk.zoning ?? 'n/a'}, incentives ${risk.incentives ?? 'n/a'}${S.riskDemo ? ' (demo)' : ''}` : 'no score loaded'}</details>`, st);
 }
 function showMarket(m) {
   showInfo(`<h3>${esc(m.name)}</h3>Region: <b>${esc((regionById(m.region) || {}).name || m.region)}</b><br>` +
@@ -700,7 +752,7 @@ function renderSources() {
       const on = srcOn(s.id); const st = RT.status[s.id];
       let status = !on ? 'Off' : s.mode === 'snapshot' ? 'On: using the built-in snapshot' : s.mode === 'engine' ? (RT.status[s.id] ? RT.status[s.id].text : 'On: included in sources.yaml for the engine') : (st ? st.text : 'On');
       const cls = st && st.kind === 'live' ? 'live' : st && st.kind === 'err' ? 'err' : '';
-      h += `<div class="row"><div class="t"><b>${esc(s.dataset)} ${modeLabel(s)}</b><small>${esc(s.org)}${s.note ? '. ' + esc(s.note) : ''}${s.url ? ` <a href="${esc(s.url)}" target="_blank" rel="noopener">source</a>` : ''}</small>` +
+      h += `<div class="row"><div class="t"><b>${esc(s.dataset)} ${modeLabel(s)}</b><small>${esc(s.org)}${s.note ? '. ' + esc(s.note) : ''}${s.asOf ? '. Data as of ' + esc(s.asOf) : ''}${s.url ? ` <a href="${esc(s.url)}" target="_blank" rel="noopener">source</a>` : ''}</small>` +
         `<small class="${cls ? 'badge ' + cls : ''}" style="${cls ? 'display:inline-block;margin:4px 0 0' : ''}">${esc(status)}</small>` +
         (s.key && on ? `<input class="keyin" type="password" autocomplete="off" data-key="${s.id}" placeholder="API key (kept in this browser only)" value="${esc(S.keys[s.id] || '')}">` : '') +
         `</div><label class="switch"><input type="checkbox" data-src="${s.id}" ${on ? 'checked' : ''} aria-label="${esc(s.dataset)}"><span></span></label></div>`;
@@ -724,7 +776,7 @@ function selectTab(name) {
   document.querySelectorAll('#tabs button').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === name)));
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('on', t.id === 'tab-' + name));
 }
-function renderAll() { renderSim(); renderHeadline(); renderRegions(); renderLayers(); renderSources(); renderSites(); renderMap(); renderLegend(); $('colorBy').value = S.colorBy; }
+function renderAll() { renderSim(); renderHeadline(); renderRegions(); renderLayers(); renderSources(); renderSites(); renderMap(); renderLegend(); renderFresh(); $('colorBy').value = S.colorBy; }
 const refresh = () => { save(); renderSim(); renderHeadline(); renderRegions(); renderSites(); renderMap(); renderLegend(); };
 
 /* =====================================================================
@@ -825,6 +877,101 @@ function sourcesYaml() {
 }
 
 /* =====================================================================
+   9b. SHARE, CITE, IMAGE, CSV
+   The address bar always describes the current view, so any link you copy
+   reopens the same scenario (and the same state card, if one is open).
+   ===================================================================== */
+const COLOR_MODES = ['supply', 'risk', 'none'];
+function hashParams() {
+  const p = new URLSearchParams();
+  p.set('mw', S.sim.mw); p.set('eff', S.sim.eff); p.set('flex', S.sim.flex); p.set('pipe', S.sim.subPipe ? 1 : 0); p.set('color', S.colorBy);
+  if (RT.sel) p.set('st', RT.sel);
+  return p.toString();
+}
+function writeHash() { try { history.replaceState(null, '', '#' + hashParams()); } catch (e) { /* not allowed here */ } }
+function shareUrl() { return location.href.split('#')[0] + '#' + hashParams(); }
+function readHash() {
+  try {
+    const p = new URLSearchParams(location.hash.replace(/^#/, ''));
+    if (!p.has('mw') && !p.has('flex')) return null;
+    const out = {};
+    const mw = parseFloat(p.get('mw')); if (mw >= 50 && mw <= 2000) out.mw = Math.round(mw / 50) * 50;
+    const eff = parseFloat(p.get('eff')); if (eff >= 0 && eff <= 95) out.eff = Math.round(eff / 5) * 5;
+    if (FLEX[p.get('flex')]) out.flex = p.get('flex');
+    if (p.get('pipe') === '0' || p.get('pipe') === '1') out.pipe = p.get('pipe') === '1';
+    if (COLOR_MODES.includes(p.get('color'))) out.color = p.get('color');
+    if (STATES[p.get('st')]) out.st = p.get('st');
+    return out;
+  } catch (e) { return null; }
+}
+function citationText() {
+  const sc = scenario(), f = FLEX[sc.flex];
+  return `Gridwarden scenario: ${fmtMW(sc.mw)} campus, ${sc.eff}% efficiency what-if, ${f.long}. ` +
+    'Headroom data: Duke Nicholas Institute, Rethinking Load Growth (Feb 2025). Market data: CBRE North America Data Center Trends (2025-2026). ' +
+    `Estimate only; not an interconnection study. Accessed ${new Date().toISOString().slice(0, 10)}. ${shareUrl()}`;
+}
+function renderFresh() {
+  const on = SOURCES.filter(s => s.mode === 'snapshot' && s.asOf && srcOn(s.id));
+  $('fresh').textContent = on.length ? 'Data as of: ' + on.map(s => s.org + ', ' + s.asOf).join('; ') + '.' : '';
+}
+function embedded() { try { return window.self !== window.top; } catch (e) { return true; } }
+function saveBlob(blob, name) {
+  if (embedded()) return false;
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  return true;
+}
+function regionsCsv() {
+  const sc = scenario();
+  const L = ['region,headroom_gw,tracked_construction_gw,left_gw,standard_campuses,your_campuses'];
+  sc.rows.forEach(x => L.push([JSON.stringify(x.r.name), x.head == null ? '' : x.head.toFixed(2), x.pipe.toFixed(2), x.rem == null ? '' : x.rem.toFixed(2), x.std == null ? '' : x.std, x.yours == null ? '' : x.yours].join(',')));
+  L.push('', '# scenario: ' + fmtMW(sc.mw) + ' campus, ' + sc.eff + '% efficiency (what-if), ' + FLEX[sc.flex].long);
+  L.push('# sources: Duke Nicholas Institute (Feb 2025); CBRE (2025-2026). Estimate only, not an interconnection study.');
+  return L.join('\n');
+}
+function wrapLines(ctx, text, maxW) {
+  const words = String(text).split(/\s+/), lines = []; let cur = '';
+  words.forEach(w => { const t = cur ? cur + ' ' + w : w; if (ctx.measureText(t).width > maxW && cur) { lines.push(cur); cur = w; } else cur = t; });
+  if (cur) lines.push(cur);
+  return lines;
+}
+function mapImageBlob() {
+  return new Promise((resolve, reject) => {
+    const vb = RT.vb || VIEWBOX.geo, K = 2;
+    const clone = svg.cloneNode(true);
+    const a = svg.querySelectorAll('*'), b = clone.querySelectorAll('*');
+    const props = ['fill', 'fill-opacity', 'stroke', 'stroke-width', 'stroke-dasharray', 'opacity', 'font-size', 'font-weight', 'font-family', 'text-anchor', 'paint-order'];
+    a.forEach((n, i) => { const cs = getComputedStyle(n); props.forEach(pr => { const v = cs.getPropertyValue(pr); if (v) b[i].style.setProperty(pr, v); }); });
+    clone.setAttribute('xmlns', NS); clone.setAttribute('width', vb[0] * K); clone.setAttribute('height', vb[1] * K);
+    const xml = new XMLSerializer().serializeToString(clone);
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const root = getComputedStyle(document.documentElement), tok = n => root.getPropertyValue(n).trim() || '#000';
+        const W = vb[0] * K, HEAD = 190, FOOT = 110, MAPH = vb[1] * K;
+        const c = document.createElement('canvas'); c.width = W; c.height = HEAD + MAPH + FOOT;
+        const ctx = c.getContext('2d');
+        ctx.fillStyle = tok('--bg'); ctx.fillRect(0, 0, c.width, c.height);
+        ctx.fillStyle = tok('--ink'); ctx.font = '900 46px "Big Shoulders Display","Arial Narrow",Impact,sans-serif'; ctx.textBaseline = 'alphabetic';
+        ctx.fillText('GRIDWARDEN', 40, 66);
+        ctx.font = '600 30px "IBM Plex Sans",system-ui,sans-serif';
+        wrapLines(ctx, $('headline').textContent, W - 80).slice(0, 2).forEach((l, i) => ctx.fillText(l, 40, 116 + i * 40));
+        ctx.fillStyle = tok('--surface'); ctx.fillRect(0, HEAD, W, MAPH);
+        ctx.drawImage(img, 0, HEAD, W, MAPH);
+        ctx.fillStyle = tok('--muted'); ctx.font = '400 22px "IBM Plex Sans",system-ui,sans-serif';
+        const sc = scenario();
+        const foot = [`Scenario: ${fmtMW(sc.mw)} campus, ${sc.eff}% efficiency what-if, ${FLEX[sc.flex].long}. Estimate only, not an interconnection study.`,
+          'Data: Duke Nicholas Institute (Feb 2025); CBRE (2025-2026).' + (location.protocol.indexOf('http') === 0 ? '  ' + location.host + location.pathname : '  Gridwarden')];
+        foot.forEach((l, i) => wrapLines(ctx, l, W - 80).slice(0, 2).forEach((t, j) => ctx.fillText(t, 40, HEAD + MAPH + 40 + (i * 2 + j) * 28)));
+        c.toBlob(bl => bl ? resolve(bl) : reject(new Error('empty image')), 'image/png');
+      } catch (e) { reject(e); }
+    };
+    img.onerror = () => reject(new Error('could not draw the map'));
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(xml);
+  });
+}
+
+/* =====================================================================
    10. WIRING
    ===================================================================== */
 $('tabs').addEventListener('click', e => { const b = e.target.closest('button[data-tab]'); if (b) selectTab(b.dataset.tab); });
@@ -872,6 +1019,13 @@ $('siteForm').addEventListener('submit', e => {
   e.target.reset(); save(); renderAll(); toast('Site added');
 });
 $('reportBtn').addEventListener('click', () => copyText(reportText()));
+$('linkBtn').addEventListener('click', () => copyText(shareUrl()));
+$('citeBtn').addEventListener('click', () => copyText(citationText()));
+$('csvBtn').addEventListener('click', () => { const t = regionsCsv(); if (!saveBlob(new Blob([t], { type: 'text/csv' }), 'gridwarden-regions.csv')) copyText(t); else toast('Saved gridwarden-regions.csv'); });
+$('imgBtn').addEventListener('click', () => {
+  if (embedded()) return toast('Image saving is blocked in this preview. Open the page directly.');
+  mapImageBlob().then(bl => { if (saveBlob(bl, 'gridwarden-map.png')) toast('Saved gridwarden-map.png'); }).catch(e => toast('Could not make the image: ' + e.message));
+});
 $('printBtn').addEventListener('click', () => { try { window.print(); } catch (e) { toast('Printing is blocked here. Use Copy report instead.'); } });
 const centre = () => (RT.vb || VIEWBOX.geo).map(v => v / 2);
 $('zoomIn').addEventListener('click', () => zoomAt(1.4, centre()[0], centre()[1]));
@@ -885,12 +1039,21 @@ $('themeBtn').addEventListener('click', () => {
 /* =====================================================================
    11. START
    ===================================================================== */
+const FROM_LINK = readHash();
+if (FROM_LINK) {
+  if (FROM_LINK.mw != null) S.sim.mw = FROM_LINK.mw;
+  if (FROM_LINK.eff != null) S.sim.eff = FROM_LINK.eff;
+  if (FROM_LINK.flex) S.sim.flex = FROM_LINK.flex;
+  if (FROM_LINK.pipe != null) S.sim.subPipe = FROM_LINK.pipe;
+  if (FROM_LINK.color) S.colorBy = FROM_LINK.color;
+}
 if (S.theme) document.documentElement.setAttribute('data-theme', S.theme);
 initGeo();
 selectTab(S.tab || 'simulate');
 renderAll();
+if (FROM_LINK && FROM_LINK.st) showState(FROM_LINK.st);
 SOURCES.filter(s => s.mode === 'browser' && srcOn(s.id)).forEach(s => runLoader(s.id));
-window.GridZilla = { state: () => S, scenario, rankSites, sourcesYaml, reportText, SOURCES, REGIONS, MARKETS };
+window.GridZilla = { state: () => S, scenario, rankSites, sourcesYaml, reportText, shareUrl, citationText, regionsCsv, SOURCES, REGIONS, MARKETS };
 })();
 </script>
 <a href="watchlist.html" style="position:fixed;right:14px;bottom:14px;z-index:9999;background:#1F3A5F;color:#fff;padding:8px 14px;border-radius:999px;font:600 13px system-ui,sans-serif;text-decoration:none;box-shadow:0 2px 8px rgba(0,0,0,.3)">Watchlist &rarr;</a>

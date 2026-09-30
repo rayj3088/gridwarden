@@ -30,6 +30,9 @@ Open it by double-clicking, or drop it on GitHub Pages and it is live.
   samples. They are ranked against the current scenario and can be copied back
   out as CSV.
 - **Reports.** Copy a plain-text scenario report, or print to PDF.
+- **Plain-language state cards.** Click a state to see what the numbers mean for it, in plain words, plus questions worth asking locally.
+- **Shareable views.** The address bar always describes your current scenario, so a copied link reopens the same view. You can also copy a citation, save the map as an image, and download the regional table as CSV.
+- **What this can't tell you.** A visible list of the model's limits, with data-as-of dates.
 - Settings, sites, risk scores and switches are saved in your browser.
 
 ## Data in the snapshot
